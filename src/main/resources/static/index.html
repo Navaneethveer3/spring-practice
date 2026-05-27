@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management API Tester</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    <div class="container">
+        <header>
+            <h1>Product Management API</h1>
+            <p>Test your Spring Boot REST Endpoints</p>
+        </header>
+        
+        <div class="actions">
+            <button id="btn-show-add" class="btn primary-btn">✨ Add New Product</button>
+            <button id="btn-refresh" class="btn secondary-btn">🔄 Refresh List</button>
+        </div>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search products..." class="search-input">
+            <button id="btn-search" class="btn primary-btn">Search</button>
+        </div>
+
+        <section class="dashboard">
+            <div id="products-container" class="products-grid">
+                <!-- Products will be injected here via JS -->
+            </div>
+            <div id="loading" class="loading-spinner" style="display: none;"></div>
+        </section>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-btn">&times;</span>
+            <h2 id="modal-title">Add Product</h2>
+            <form id="product-form">
+                <input type="hidden" id="prod-id">
+                <div class="form-group">
+                    <label for="prod-name">Product Name</label>
+                    <input type="text" id="prod-name" required placeholder="e.g. Wireless Mouse">
+                </div>
+                <div class="form-group">
+                    <label for="prod-price">Price ($)</label>
+                    <input type="number" id="prod-price" required placeholder="e.g. 49">
+                </div>
+                <div class="form-group">
+                    <label for="prod-brand">Brand</label>
+                    <input type="text" id="prod-brand" placeholder="e.g. Logitech">
+                </div>
+                <div class="form-group">
+                    <label for="prod-launch-date">Launch Date</label>
+                    <input type="date" id="prod-launch-date">
+                </div>
+                <div class="form-group" id="image-upload-group">
+                    <label for="prod-image">Product Image <small style="color: var(--text-muted, #888); font-weight: normal;">(Max: 200KB)</small></label>
+                    <input type="file" id="prod-image" accept="image/*">
+                </div>
+                <button type="submit" class="btn primary-btn submit-btn">Save Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
