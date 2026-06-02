@@ -1,6 +1,18 @@
 const API_BASE = 'http://127.0.0.1:8080/products';
 
+// Auth State
+let accessToken = localStorage.getItem('accessToken');
+let refreshToken = localStorage.getItem('refreshToken');
+
 // DOM Elements
+const authSection = document.getElementById('auth-section');
+const dashboardSection = document.getElementById('dashboard-section');
+const btnLogout = document.getElementById('btn-logout');
+const tabLogin = document.getElementById('tab-login');
+const tabRegister = document.getElementById('tab-register');
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+
 const productsContainer = document.getElementById('products-container');
 const modal = document.getElementById('product-modal');
 const closeBtn = document.querySelector('.close-btn');
@@ -16,13 +28,135 @@ const imageUploadGroup = document.getElementById('image-upload-group');
 
 // State
 let isEditing = false;
-// Store products by ID to keep images on edit payload
 let productsMap = {};
 
 // Initialize
-document.addEventListener('DOMContentLoaded', fetchProducts);
+document.addEventListener('DOMContentLoaded', checkAuth);
 
-// Event Listeners
+function checkAuth() {
+    if (accessToken && refreshToken) {
+        authSection.style.display = 'none';
+        dashboardSection.style.display = 'block';
+        btnLogout.style.display = 'block';
+        fetchProducts();
+    } else {
+        authSection.style.display = 'flex';
+        dashboardSection.style.display = 'none';
+        btnLogout.style.display = 'none';
+    }
+}
+
+// Auth UI Toggles
+tabLogin.addEventListener('click', () => {
+    tabLogin.classList.add('active');
+    tabRegister.classList.remove('active');
+    loginForm.style.display = 'block';
+    registerForm.style.display = 'none';
+});
+
+tabRegister.addEventListener('click', () => {
+    tabRegister.classList.add('active');
+    tabLogin.classList.remove('active');
+    registerForm.style.display = 'block';
+    loginForm.style.display = 'none';
+});
+
+// Auth Handlers
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+    try {
+        const res = await fetch('http://127.0.0.1:8080/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) throw new Error('Invalid credentials');
+        const data = await res.json();
+        accessToken = data.accessToken;
+        refreshToken = data.refreshToken;
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        checkAuth();
+        showToast('Logged in successfully!');
+    } catch(err) {
+        showToast(err.message, true);
+    }
+});
+
+registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('reg-username').value;
+    const password = document.getElementById('reg-password').value;
+    try {
+        const res = await fetch('http://127.0.0.1:8080/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) throw new Error('Registration failed (username might exist)');
+        showToast('Registered successfully! Please log in.');
+        tabLogin.click();
+    } catch(err) {
+        showToast(err.message, true);
+    }
+});
+
+btnLogout.addEventListener('click', async () => {
+    try {
+        await fetchWithAuth('http://127.0.0.1:8080/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken })
+        });
+    } catch(e) {} 
+    doLogout();
+});
+
+function doLogout() {
+    accessToken = null;
+    refreshToken = null;
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    checkAuth();
+    showToast('Logged out');
+}
+
+// Custom Fetch Wrapper
+async function fetchWithAuth(url, options = {}) {
+    if (!options.headers) options.headers = {};
+    options.headers['Authorization'] = `Bearer ${accessToken}`;
+
+    let response = await fetch(url, options);
+
+    if (response.status === 401 || response.status === 403) {
+        try {
+            const refreshRes = await fetch('http://127.0.0.1:8080/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken })
+            });
+
+            if (!refreshRes.ok) throw new Error('Refresh failed');
+            
+            const data = await refreshRes.json();
+            accessToken = data.accessToken;
+            refreshToken = data.refreshToken;
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+
+            options.headers['Authorization'] = `Bearer ${accessToken}`;
+            response = await fetch(url, options);
+        } catch (err) {
+            doLogout();
+            throw new Error('Session expired. Please log in again.');
+        }
+    }
+    return response;
+}
+
+// Event Listeners for Dashboard
 btnShowAdd.addEventListener('click', () => openModal(false));
 btnRefresh.addEventListener('click', fetchProducts);
 
@@ -78,8 +212,6 @@ productForm.addEventListener('submit', async (e) => {
         if (isEditing) {
             product.id = parseInt(id);
             const existingProduct = productsMap[id];
-            
-            // Include existing image data if no new image is provided
             if (existingProduct && !imageFile) {
                 product.imageName = existingProduct.imageName;
                 product.imageType = existingProduct.imageType;
@@ -109,7 +241,7 @@ productForm.addEventListener('submit', async (e) => {
             method = 'PUT';
         }
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
             method: method,
             body: formData
         });
@@ -131,12 +263,11 @@ async function fetchProducts() {
     productsContainer.innerHTML = '';
     
     try {
-        const response = await fetch(API_BASE);
+        const response = await fetchWithAuth(API_BASE);
         if (!response.ok) throw new Error('Failed to fetch products');
         
         const products = await response.json();
         
-        // Cache products
         productsMap = {};
         products.forEach(p => productsMap[p.id] = p);
         
@@ -154,7 +285,7 @@ async function searchProducts(keyword) {
     productsContainer.innerHTML = '';
     
     try {
-        const response = await fetch(`${API_BASE}/search?keyword=${encodeURIComponent(keyword)}`);
+        const response = await fetchWithAuth(`${API_BASE}/search?keyword=${encodeURIComponent(keyword)}`);
         if (!response.ok) throw new Error('Failed to search products');
         
         const products = await response.json();
@@ -178,15 +309,12 @@ function renderProducts(products) {
     }
 
     productsContainer.innerHTML = products.map(product => {
-        // Handle image data if available
         let imgSrc = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect width='300' height='200' fill='%23eeeeee'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='20' text-anchor='middle' fill='%23999999' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
         if (product.imageData) {
             imgSrc = `data:${product.imageType || 'image/jpeg'};base64,${product.imageData}`;
         }
 
-        // Properly escape quotes for the inline onclick handler to avoid breaking HTML
         const escapedName = product.name.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
-
         const errorImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect width='300' height='200' fill='%23ffdddd'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='20' text-anchor='middle' fill='%23cc0000' dy='.3em'%3EImage Error%3C/text%3E%3C/svg%3E";
 
         return `
@@ -213,7 +341,7 @@ async function deleteProduct(id) {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-        const response = await fetch(`${API_BASE}/${id}`, {
+        const response = await fetchWithAuth(`${API_BASE}/${id}`, {
             method: 'DELETE'
         });
 

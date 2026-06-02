@@ -346,3 +346,48 @@ header p {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Auth UI Styles */
+.auth-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.auth-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 400px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+.auth-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 1rem;
+}
+
+.tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.tab.active {
+    color: var(--primary-color);
+}
+
+.tab:hover {
+    color: #fff;
+}

@@ -13,7 +13,45 @@
         <header>
             <h1>Product Management API</h1>
             <p>Test your Spring Boot REST Endpoints</p>
+            <button id="btn-logout" class="btn danger-btn" style="display: none; position: absolute; right: 2rem; top: 2rem;">Logout</button>
         </header>
+        
+        <!-- Auth Section -->
+        <section id="auth-section" class="auth-section">
+            <div class="auth-card glass-panel">
+                <div class="auth-tabs">
+                    <button id="tab-login" class="tab active">Login</button>
+                    <button id="tab-register" class="tab">Register</button>
+                </div>
+                
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" required placeholder="Enter your username">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="btn primary-btn submit-btn">Log In</button>
+                </form>
+
+                <form id="register-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="reg-username">Username</label>
+                        <input type="text" id="reg-username" required placeholder="Choose a username">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password">Password</label>
+                        <input type="password" id="reg-password" required placeholder="Choose a secure password">
+                    </div>
+                    <button type="submit" class="btn primary-btn submit-btn">Register</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" style="display: none;">
         
         <div class="actions">
             <button id="btn-show-add" class="btn primary-btn">✨ Add New Product</button>
@@ -30,8 +68,8 @@
             </div>
             <div id="loading" class="loading-spinner" style="display: none;"></div>
         </section>
+        </section>
     </div>
-
     <!-- Add/Edit Product Modal -->
     <div id="product-modal" class="modal">
         <div class="modal-content glass-panel">

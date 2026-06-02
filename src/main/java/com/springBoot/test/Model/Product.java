@@ -16,6 +16,7 @@ public class Product {
 	private Integer id;
 	private Integer price;
 	private String name;
+	private String description;
 	private String brand;
 	private LocalDate launchDate;
 	private String imageName;
@@ -69,6 +70,12 @@ public class Product {
 	}
 	public void setLaunchDate(LocalDate launchDate) {
 		this.launchDate = launchDate;
+	}
+	public String getDescription() {
+		return description;
+	}
+	public void setDescription(String description) {
+		this.description = description;
 	}
 	
 }

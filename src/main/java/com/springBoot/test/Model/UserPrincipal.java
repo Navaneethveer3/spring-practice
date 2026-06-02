@@ -3,7 +3,7 @@ package com.springBoot.test.Model;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.jspecify.annotations.Nullable;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,8 +23,7 @@ public class UserPrincipal implements UserDetails{
 	}
 
 	@Override
-	public @Nullable String getPassword() {
-		// TODO Auto-generated method stub
+	public String getPassword() {
 		return user.getPassword();
 	}
 
