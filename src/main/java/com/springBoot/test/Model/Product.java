@@ -3,13 +3,17 @@ package com.springBoot.test.Model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Product {
+public class Product implements Serializable {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,6 +25,12 @@ public class Product {
 	private LocalDate launchDate;
 	private String imageName;
 	private String imageType;
+	private Integer quantity;
+	
+	@JsonIgnore
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "product", fetch = FetchType.LAZY)
+	private List<OrderItem> item;
+	
 	@Lob
 	private byte[] imageData;
 	public Integer getId() {
@@ -77,5 +87,18 @@ public class Product {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+	public Integer getQuantity() {
+		return quantity;
+	}
+	public void setQuantity(Integer quantity) {
+		this.quantity = quantity;
+	}
+	public List<OrderItem> getItem() {
+		return item;
+	}
+	public void setItem(List<OrderItem> item) {
+		this.item = item;
+	}
+	
 	
 }

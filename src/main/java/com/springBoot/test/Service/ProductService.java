@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +28,7 @@ public class ProductService {
 	}
 	
 	@Transactional(readOnly = true)
+	@Cacheable(key = "#prodId", value = "products")
 	public Product getProductById(int prodId) {
 		return repo.findById(prodId).orElse(null);
 	}
@@ -43,6 +47,7 @@ public class ProductService {
 	}
 	
 	@Transactional
+	@CachePut(key = "#prod.id", value = "products")
 	public Product updateProduct(Product prod, MultipartFile image) {
 		
 		try {
@@ -63,6 +68,7 @@ public class ProductService {
 		}
 	}
 	
+	@CacheEvict(key = "#prodId", value = "products")
 	public String deleteProduct(int prodId) {
 		
 		try {
@@ -78,6 +84,7 @@ public class ProductService {
 	}
 
 	@Transactional(readOnly = true)
+	@Cacheable(key = "#keyword", value = "products")
 	public List<Product> searchProduct(String keyword) {
 		return repo.searchProduct(keyword);
 	}

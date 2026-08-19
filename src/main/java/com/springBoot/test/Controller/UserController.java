@@ -12,8 +12,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.CrossOrigin;
+
+import com.springBoot.test.Repository.UserRepo;
 
 import com.springBoot.test.Model.RefreshToken;
 import com.springBoot.test.Model.Users;
@@ -22,6 +27,8 @@ import com.springBoot.test.Service.RefreshTokenService;
 import com.springBoot.test.Service.UserService;
 
 @RestController
+@RequestMapping("/")
+@CrossOrigin("*")
 public class UserController {
 	
 	@Autowired
@@ -33,8 +40,10 @@ public class UserController {
 	@Autowired
 	JWTService jwtService;
 
-	
-	@PostMapping("/register")
+	@Autowired
+	UserRepo userRepo;
+
+	@PostMapping("register")
 	public ResponseEntity<?> register(@RequestBody Users user) throws Exception {
 		try {
 			Users u = service.register(user);
@@ -45,21 +54,24 @@ public class UserController {
 		}
 	}
 	
-	@PostMapping("/reset-password")
+	@PostMapping("reset-password")
 	public ResponseEntity<Users> resetPassword(Principal principal, @RequestBody Users user){
 		String username = principal.getName();
 		return new ResponseEntity<>(service.resetPassword(username, user.getPassword()), HttpStatus.OK);
 	}
 	
 	
-	@PostMapping("/login")
+	@PostMapping("login")
 	public ResponseEntity<?> login(@RequestBody Users user) throws Exception{
 		try {
 			String accessToken = service.login(user);
 			RefreshToken refreshToken = tokenService.createRefreshToken(user.getUsername());
+			Users dbUser = userRepo.findByUsername(user.getUsername());
+			
 			Map<String, String> tokens = new HashMap<>();
 			tokens.put("accessToken", accessToken);
 			tokens.put("refreshToken", refreshToken.getToken());
+			tokens.put("role", dbUser.getRole());
 			
 			return new ResponseEntity<>(tokens,HttpStatus.OK);
 		}
@@ -69,7 +81,7 @@ public class UserController {
 	}
 	
 	
-	@PostMapping("/refresh")
+	@PostMapping("refresh")
 	public ResponseEntity<?> refreshToken(@RequestBody Map<String,String> request){
 		String requestRefreshToken = request.get("refreshToken");
 		
@@ -87,9 +99,10 @@ public class UserController {
 	}
 	
 	
-	@PostMapping("/logout")
+	@PostMapping("logout")
 	public ResponseEntity<?> logout(@RequestBody Map<String, String> token){
 		String requestRefreshToken = token.get("refreshToken");
 		return new ResponseEntity<>(service.logout(requestRefreshToken), HttpStatus.OK);
 	}
+	
 }

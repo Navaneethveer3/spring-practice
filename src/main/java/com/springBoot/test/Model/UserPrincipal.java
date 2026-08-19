@@ -16,10 +16,13 @@ public class UserPrincipal implements UserDetails{
 		this.user = user;
 	}
 	
+	public Users getUser() {
+		return user;
+	}
+	
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		// TODO Auto-generated method stub
-		return Collections.singleton(new SimpleGrantedAuthority("USER"));
+		return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
 	}
 
 	@Override

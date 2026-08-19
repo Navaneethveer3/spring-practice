@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.springBoot.test.Model.RefreshToken;
+import com.springBoot.test.Model.Users;
 import com.springBoot.test.Repository.RefreshTokenRepo;
 import com.springBoot.test.Repository.UserRepo;
 
@@ -21,8 +22,17 @@ public class RefreshTokenService {
 	UserRepo userRepo;
 	
 	public RefreshToken createRefreshToken(String username) {
-		RefreshToken refreshToken = new RefreshToken();
-		refreshToken.setUser(userRepo.findByUsername(username));
+		Users user = userRepo.findByUsername(username);
+		Optional<RefreshToken> existingTokenOpt = tokenRepo.findByUser(user);
+		
+		RefreshToken refreshToken;
+		if (existingTokenOpt.isPresent()) {
+			refreshToken = existingTokenOpt.get();
+		} else {
+			refreshToken = new RefreshToken();
+			refreshToken.setUser(user);
+		}
+		
 		refreshToken.setToken(UUID.randomUUID().toString());
 		refreshToken.setExpiryDate(Instant.now().plusMillis(600000*100));
 		

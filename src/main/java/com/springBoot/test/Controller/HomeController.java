@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController()
 @RequestMapping("/products")
-@CrossOrigin
+@CrossOrigin("*")
 public class HomeController {
 
 	

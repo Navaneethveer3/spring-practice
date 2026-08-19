@@ -1,5 +1,7 @@
 package com.springBoot.test.Service;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -7,8 +9,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.springBoot.test.Model.Profile;
 import com.springBoot.test.Model.Users;
+import com.springBoot.test.Repository.ProfileRepository;
 import com.springBoot.test.Repository.RefreshTokenRepo;
 import com.springBoot.test.Repository.UserRepo;
 
@@ -31,6 +36,9 @@ public class UserService {
 	RefreshTokenRepo tokenRepo;
 	
 	@Autowired
+	ProfileRepository profileRepo;
+	
+	@Autowired
 	JWTService jwt;
 	
 	public Users register(Users user) throws Exception {
@@ -38,6 +46,11 @@ public class UserService {
 			throw new Exception("Username already exists");
 		}
 		user.setPassword(passwordEncoder.encode(user.getPassword()));
+		user.setRole("USER");
+		Profile profile = new Profile();
+		profile.setUsername(user.getUsername());
+		profile.setUser(user);
+		profileRepo.save(profile);
 		return repo.save(user);
 	}
 	
@@ -66,4 +79,5 @@ public class UserService {
 		});
 		return "Logged out successfully";
 	}
+	
 }
