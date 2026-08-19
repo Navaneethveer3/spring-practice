@@ -1,5 +1,7 @@
 package com.springBoot.test.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -11,6 +13,7 @@ public class OrderItem {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
 	
+	@JsonIgnore
 	@ManyToOne
 	@JoinColumn(name = "order_id")
 	private Order order;

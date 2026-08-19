@@ -48,8 +48,18 @@ public class HomeController {
 	}
 	
 	@PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<Product> updateProduct(@RequestPart("prod") Product prod, @PathVariable("id") int id, @RequestPart(value = "image", required = false) MultipartFile image) {
-		return new ResponseEntity<>(ps.updateProduct(prod,image),HttpStatus.OK);
+	public ResponseEntity<?> updateProduct(@RequestPart("prod") Product prod, @PathVariable("id") int id, @RequestPart(value = "image", required = false) MultipartFile image) throws Exception{
+		try {
+			prod.setId(id);
+			Product newProd = ps.updateProduct(prod,image);
+			if (newProd == null) {
+				return new ResponseEntity<>("Product not found or update failed", HttpStatus.BAD_REQUEST);
+			}
+			return new ResponseEntity<>(newProd,HttpStatus.OK);
+		}
+		catch(Exception e) {
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 	
 	@DeleteMapping("/{id}")

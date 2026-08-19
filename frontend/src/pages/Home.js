@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import api, { addToCart } from '../services/api';
+import { Link, useNavigate } from 'react-router-dom';
+import api, { addToCart, searchProducts } from '../services/api';
 
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+  const [toast, setToast] = useState(null);
+  const navigate = useNavigate();
+
   const role = localStorage.getItem('role');
+  const token = localStorage.getItem('accessToken');
 
   useEffect(() => {
     fetchProducts();
@@ -29,12 +32,10 @@ const Home = () => {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!searchTerm.trim()) {
-      return fetchProducts();
-    }
+    if (!searchTerm.trim()) return fetchProducts();
     try {
       setLoading(true);
-      const response = await api.get(`/products/search?keyword=${searchTerm}`);
+      const response = await searchProducts(searchTerm);
       setProducts(response.data);
       setError('');
     } catch (err) {
@@ -44,70 +45,139 @@ const Home = () => {
     }
   };
 
-  const handleAddToCart = async (productId) => {
+  const showToast = (text, type = 'success') => {
+    setToast({ text, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleAddToCart = async (e, productId) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     try {
       await addToCart(productId);
-      alert('Product added to cart!');
+      showToast('Added to cart!', 'success');
     } catch (err) {
-      alert('Failed to add to cart. Please try again.');
+      showToast('Failed to add to cart', 'error');
     }
   };
 
+  const getStockBadge = (quantity) => {
+    if (!quantity || quantity <= 0) return <span className="stock-badge out-of-stock">Out of Stock</span>;
+    if (quantity <= 5) return <span className="stock-badge low-stock">Only {quantity} left!</span>;
+    return <span className="stock-badge in-stock">In Stock</span>;
+  };
+
   return (
-    <div className="container">
-      <div className="flex justify-between items-center mb-8">
-        <h1>Our Products</h1>
-        {role === 'ADMIN' && (
-          <Link to="/add-product" className="btn btn-primary">Add New Product</Link>
-        )}
+    <div className="container animate-fade-in">
+      {/* Toast */}
+      {toast && (
+        <div className="toast-container">
+          <div className={`toast toast-${toast.type}`}>
+            {toast.type === 'success' ? '✅' : '❌'} {toast.text}
+          </div>
+        </div>
+      )}
+
+      {/* Page Header */}
+      <div className="page-header">
+        <h1 className="gradient-text">Explore Products</h1>
+        <div className="page-header-actions">
+          {role === 'USER' && (
+            <>
+              <Link to="/cart" className="btn btn-primary">🛒 My Cart</Link>
+              <Link to="/orders" className="btn btn-accent">📦 My Orders</Link>
+            </>
+          )}
+          {role === 'ADMIN' && (
+            <Link to="/add-product" className="btn btn-primary">➕ Add New Product</Link>
+          )}
+        </div>
       </div>
 
-      <form onSubmit={handleSearch} className="mb-8" style={{ display: 'flex', gap: '1rem', maxWidth: '500px' }}>
+      {/* Search Bar */}
+      <form onSubmit={handleSearch} className="flex gap-3 mb-6" style={{ maxWidth: '550px' }}>
         <input
           type="text"
           className="form-control"
-          placeholder="Search products..."
+          placeholder="Search by name, brand, or category..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <button type="submit" className="btn btn-secondary">Search</button>
+        {searchTerm && (
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setSearchTerm(''); fetchProducts(); }}>
+            ✕
+          </button>
+        )}
       </form>
 
       {error && <div className="error-message">{error}</div>}
 
+      {/* Product Grid */}
       {loading ? (
-        <div className="text-center mt-8">Loading...</div>
-      ) : products.length === 0 ? (
-        <div className="text-center mt-8 glass-panel">No products found.</div>
-      ) : (
-        <div className="grid grid-cols-1 grid-cols-2 grid-cols-3 grid-cols-4 animate-fade-in">
-          {products.map((product) => (
-            <div key={product.id} className="product-card glass-panel">
-              {product.imageData ? (
-                <img 
-                  src={`data:${product.imageType};base64,${product.imageData}`} 
-                  alt={product.name} 
-                  className="product-image"
-                />
-              ) : (
-                <div className="product-image flex items-center" style={{ justifyContent: 'center' }}>No Image</div>
-              )}
-              <div className="product-info">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="product-title" style={{ margin: 0 }}>{product.name}</h3>
-                </div>
-                <div className="product-brand">{product.brand}</div>
-                <div className="product-price">${product.price}</div>
-                <div className="product-actions">
-                  <Link to={`/product/${product.id}`} className="btn btn-secondary" style={{ flex: 1, padding: '0.5rem' }}>View</Link>
-                  {role === 'ADMIN' ? (
-                    <Link to={`/edit-product/${product.id}`} className="btn btn-primary" style={{ flex: 1, padding: '0.5rem' }}>Edit</Link>
-                  ) : (
-                    <button onClick={() => handleAddToCart(product.id)} className="btn btn-primary" style={{ flex: 1, padding: '0.5rem' }}>Add to Cart</button>
-                  )}
-                </div>
+        <div className="grid grid-cols-1 grid-cols-2 grid-cols-3 grid-cols-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+              <div className="skeleton" style={{ height: '200px', borderRadius: 0 }}></div>
+              <div style={{ padding: '1rem' }}>
+                <div className="skeleton" style={{ height: '14px', width: '40%', marginBottom: '0.5rem' }}></div>
+                <div className="skeleton" style={{ height: '18px', width: '80%', marginBottom: '0.75rem' }}></div>
+                <div className="skeleton" style={{ height: '24px', width: '30%' }}></div>
               </div>
             </div>
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="glass-panel empty-state">
+          <div className="empty-state-icon">🔍</div>
+          <h3>No products found</h3>
+          <p>Try adjusting your search or check back later.</p>
+          {searchTerm && <button className="btn btn-primary" onClick={() => { setSearchTerm(''); fetchProducts(); }}>Clear Search</button>}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 grid-cols-2 grid-cols-3 grid-cols-4">
+          {products.map((product) => (
+            <Link to={`/product/${product.id}`} key={product.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="product-card glass-panel">
+                <div className="product-image-wrapper">
+                  {product.imageData ? (
+                    <img
+                      src={`data:${product.imageType};base64,${product.imageData}`}
+                      alt={product.name}
+                    />
+                  ) : (
+                    <div className="product-image-placeholder">No Image</div>
+                  )}
+                </div>
+                <div className="product-info">
+                  {product.brand && <div className="product-brand-badge">{product.brand}</div>}
+                  <h3 className="product-title">{product.name}</h3>
+                  {getStockBadge(product.quantity)}
+                  <div className="product-price">${product.price}</div>
+                  <div className="product-actions">
+                    {role === 'ADMIN' ? (
+                      <Link to={`/edit-product/${product.id}`} className="btn btn-secondary btn-sm" style={{ flex: 1 }}
+                        onClick={(e) => e.stopPropagation()}>
+                        Edit
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={(e) => handleAddToCart(e, product.id)}
+                        className="btn btn-primary btn-sm"
+                        style={{ flex: 1 }}
+                        disabled={!product.quantity || product.quantity <= 0}
+                      >
+                        Add to Cart
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
       )}

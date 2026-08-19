@@ -48,20 +48,40 @@ public class ProductService {
 	
 	@Transactional
 	@CachePut(key = "#prod.id", value = "products")
-	public Product updateProduct(Product prod, MultipartFile image) {
-		
+	public Product updateProduct(Product prod, MultipartFile image) throws Exception {
 		try {
+			Product curProd = repo.findById(prod.getId()).orElse(null);
+			if(curProd==null) {
+				throw new Exception("Product doesn't exist");
+			}
 			if (image != null && !image.isEmpty()) {
 				if(image!=null && image.getSize()>MAX_FILE_SIZE) {
 					throw new RuntimeException("Image should be within 200KB");
 				}
-				prod.setImageName(image.getOriginalFilename());
-				prod.setImageType(image.getContentType());
-				prod.setImageData(image.getBytes());
+				curProd.setImageName(image.getOriginalFilename());
+				curProd.setImageType(image.getContentType());
+				curProd.setImageData(image.getBytes());
 				
 			}
-			repo.save(prod);
-			return prod;
+			if(prod.getName()!=null) {
+				curProd.setName(prod.getName());
+			}
+			if(prod.getBrand()!=null) {
+				curProd.setBrand(prod.getBrand());
+			}
+			if(prod.getDescription()!=null) {
+				curProd.setDescription(prod.getDescription());
+			}
+			if(prod.getPrice()!=null) {
+				curProd.setPrice(prod.getPrice());
+			}
+			if(prod.getQuantity()!=null) {
+				curProd.setQuantity(prod.getQuantity());
+			}
+			if(prod.getLaunchDate()!=null) {
+				curProd.setLaunchDate(prod.getLaunchDate());
+			}
+			return repo.save(curProd);
 		}
 		catch(Exception e) {
 			return null;

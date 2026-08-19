@@ -15,16 +15,12 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Interceptor to handle 401 errors and refresh token
+// Interceptor to handle 401/403 errors and refresh token
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
     if (error.response && error.response.status === 403 && !originalRequest._retry) {
@@ -40,9 +36,7 @@ api.interceptors.response.use(
           }
         } catch (err) {
           console.error('Refresh token expired or invalid', err);
-          // Logout user if refresh fails
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          localStorage.clear();
           window.location.href = '/login';
         }
       }
@@ -51,21 +45,34 @@ api.interceptors.response.use(
   }
 );
 
-// Product API
+// ===== Auth API =====
+export const login = (credentials) => api.post('/login', credentials);
+export const register = (credentials) => api.post('/register', credentials);
+export const logout = (refreshToken) => api.post('/logout', { refreshToken });
+export const resetPassword = (password) => api.post('/reset-password', { password });
+
+// ===== Product API =====
 export const getProducts = () => api.get('/products');
+export const getProductById = (id) => api.get(`/products/${id}`);
 export const searchProducts = (keyword) => api.get(`/products/search?keyword=${keyword}`);
 export const addProduct = (formData) => api.post('/products', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
+export const updateProduct = (id, formData) => api.put(`/products/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' }});
 export const deleteProduct = (id) => api.delete(`/products/${id}`);
 
-// Cart API
+// ===== Cart API =====
 export const getCart = () => api.get('/cart');
 export const getCartValue = () => api.get('/cart/get-cart-value');
 export const addToCart = (productId) => api.post(`/cart/add?productId=${productId}`);
 export const removeFromCart = (prodId) => api.delete(`/cart/delete?prodId=${prodId}`);
+export const clearCart = () => api.post('/cart/clear-cart');
 export const placeOrder = () => api.post('/cart/place-order');
 
-// Orders API
+// ===== Orders API =====
 export const getOrders = () => api.get('/orders');
 export const cancelOrder = (orderId) => api.post(`/orders/${orderId}`);
+
+// ===== Profile API =====
+export const getProfile = (username) => api.get(`/profile/${username}`);
+export const updateProfile = (username, formData) => api.put(`/profile/${username}/update`, formData, { headers: { 'Content-Type': 'multipart/form-data' }});
 
 export default api;

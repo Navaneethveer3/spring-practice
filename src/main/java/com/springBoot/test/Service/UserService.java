@@ -3,6 +3,8 @@ package com.springBoot.test.Service;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -54,6 +56,7 @@ public class UserService {
 		return repo.save(user);
 	}
 	
+	@CacheEvict(key = "#username", value = "users")
 	public Users resetPassword(String username, String str) {
 		Users curUser = repo.findByUsername(username);
 		if(curUser==null) {
@@ -63,6 +66,7 @@ public class UserService {
 		return repo.save(curUser);
 	}
 	
+	@Cacheable(key = "#user.username", value = "users")
 	public String login(Users user) throws Exception{
 		Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
 		if(authentication.isAuthenticated()) {

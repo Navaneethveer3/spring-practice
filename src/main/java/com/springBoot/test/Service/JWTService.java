@@ -18,13 +18,12 @@ import java.util.function.Function;
 @Service
 public class JWTService {
 	
-	private String secretKey = "navaneeth";
+	private String secretKey;
 	
 	public JWTService() throws Exception {
 		try {
-			KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
-			SecretKey sk = keyGen.generateKey();
-			secretKey = Base64.getEncoder().encodeToString(sk.getEncoded());
+			// Use a consistent static key so tokens aren't invalidated on every server restart
+			secretKey = Base64.getEncoder().encodeToString("MySuperSecretKeyForJwtAuthenticationThatIsLongEnough".getBytes());
 		}
 		catch(Exception e) {
 			throw new Exception(e);

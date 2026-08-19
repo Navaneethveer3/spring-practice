@@ -18,6 +18,7 @@ import com.springBoot.test.Repository.ProductRepository;
 import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class OrderService {
 
 	@Autowired

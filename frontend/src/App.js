@@ -7,6 +7,7 @@ import ProductDetails from './pages/ProductDetails';
 import AddEditProduct from './pages/AddEditProduct';
 import Cart from './pages/Cart';
 import Orders from './pages/Orders';
+import Profile from './pages/Profile';
 import Navigation from './components/Navigation';
 import './index.css';
 
@@ -43,6 +44,7 @@ function App() {
             <Route path="/product/:id" element={<ProtectedRoute><ProductDetails /></ProtectedRoute>} />
             <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             
             <Route path="/add-product" element={<AdminRoute><AddEditProduct /></AdminRoute>} />
             <Route path="/edit-product/:id" element={<AdminRoute><AddEditProduct /></AdminRoute>} />

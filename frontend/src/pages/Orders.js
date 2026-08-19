@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getOrders, cancelOrder } from '../services/api';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -14,7 +16,7 @@ const Orders = () => {
     try {
       setLoading(true);
       const response = await getOrders();
-      setOrders(response.data);
+      setOrders(response.data || []);
       setError('');
     } catch (err) {
       setError('Failed to fetch your orders.');
@@ -23,76 +25,112 @@ const Orders = () => {
     }
   };
 
+  const showToast = (text, type = 'success') => {
+    setToast({ text, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
     try {
       await cancelOrder(orderId);
-      alert('Order cancelled successfully!');
+      showToast('Order cancelled');
       fetchOrders();
     } catch (err) {
-      alert('Failed to cancel order.');
+      showToast('Failed to cancel order', 'error');
     }
   };
 
-  if (loading) return <div className="container text-center mt-8">Loading Orders...</div>;
+  if (loading) {
+    return (
+      <div className="container">
+        <h1 className="gradient-text mb-6">My Orders</h1>
+        {[1, 2].map(i => (
+          <div key={i} className="skeleton mb-4" style={{ height: '180px' }}></div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="container animate-fade-in">
-      <h1 className="mb-8">Order History</h1>
+      {toast && (
+        <div className="toast-container">
+          <div className={`toast toast-${toast.type}`}>{toast.type === 'success' ? '✅' : '❌'} {toast.text}</div>
+        </div>
+      )}
+
+      <div className="page-header">
+        <h1 className="gradient-text">My Orders</h1>
+        <Link to="/" className="btn btn-secondary btn-sm">← Continue Shopping</Link>
+      </div>
 
       {error && <div className="error-message">{error}</div>}
 
       {orders.length === 0 ? (
-        <div className="glass-panel text-center py-12">
-          <h3 style={{ color: 'var(--text-secondary)' }}>You have no past orders</h3>
+        <div className="glass-panel empty-state">
+          <div className="empty-state-icon">📦</div>
+          <h3>No orders yet</h3>
+          <p>When you place an order, it will appear here.</p>
+          <Link to="/" className="btn btn-primary">Start Shopping</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1">
+        <div className="flex flex-col gap-4">
           {orders.map((order) => {
-            // Calculate total for order (if backend doesn't provide it directly)
-            const orderTotal = order.item.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+            const orderTotal = order.item?.reduce((acc, oi) => acc + (oi.product.price * oi.quantity), 0) || order.price || 0;
 
             return (
-              <div key={order.id} className="glass-panel mb-6" style={{ padding: '2rem' }}>
-                <div className="flex justify-between items-center mb-6 border-b" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--surface-border)' }}>
-                  <div>
-                    <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Order #{order.id}</h3>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                      Status: Active
+              <div key={order.id} className="order-card">
+                {/* Order Header */}
+                <div className="order-header">
+                  <div className="flex gap-6 flex-wrap items-center">
+                    <div>
+                      <div className="text-xs text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Order ID</div>
+                      <div className="font-bold">#{order.id}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</div>
+                      <div className="font-bold" style={{ color: 'var(--primary-color)', fontSize: '1.1rem' }}>
+                        ${orderTotal.toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items</div>
+                      <div className="font-semibold">{order.item?.length || 0} products</div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
-                      Total: ${orderTotal.toFixed(2)}
-                    </div>
-                    <button 
-                      onClick={() => handleCancelOrder(order.id)} 
-                      className="btn btn-danger mt-2" 
-                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }}
+
+                  <div className="flex gap-3 items-center">
+                    <span className="status-badge status-active">● Active</span>
+                    <button
+                      onClick={() => handleCancelOrder(order.id)}
+                      className="btn btn-danger btn-sm"
                     >
                       Cancel Order
                     </button>
                   </div>
                 </div>
 
-                <div className="order-items-list grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {order.item.map((orderItem) => (
-                    <div key={orderItem.id} className="flex items-center gap-4" style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
+                {/* Order Items */}
+                <div className="order-body">
+                  {order.item?.map((orderItem) => (
+                    <div key={orderItem.id} className="order-item-card">
                       {orderItem.product.imageData ? (
-                        <img 
-                          src={`data:${orderItem.product.imageType};base64,${orderItem.product.imageData}`} 
-                          alt={orderItem.product.name} 
-                          style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }}
+                        <img
+                          src={`data:${orderItem.product.imageType};base64,${orderItem.product.imageData}`}
+                          alt={orderItem.product.name}
+                          className="order-item-image"
                         />
                       ) : (
-                        <div style={{ width: '60px', height: '60px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem' }}>
+                        <div className="order-item-image" style={{ background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                           No Img
                         </div>
                       )}
                       <div>
-                        <div style={{ fontWeight: '500', marginBottom: '0.25rem' }}>{orderItem.product.name}</div>
-                        <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                          Qty: {orderItem.quantity} x ${orderItem.product.price}
+                        <div className="font-semibold text-sm" style={{ marginBottom: '0.2rem' }}>{orderItem.product.name}</div>
+                        <div className="text-xs text-muted">Qty: {orderItem.quantity} × ${orderItem.product.price}</div>
+                        <div className="text-sm font-bold mt-1" style={{ color: 'var(--primary-color)' }}>
+                          ${(orderItem.product.price * orderItem.quantity).toFixed(2)}
                         </div>
                       </div>
                     </div>

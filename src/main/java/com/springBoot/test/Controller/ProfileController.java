@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -20,6 +21,7 @@ import com.springBoot.test.Service.ProfileService;
 
 @RestController
 @RequestMapping("/profile")
+@CrossOrigin("*")
 public class ProfileController {
 
 	@Autowired
@@ -29,7 +31,7 @@ public class ProfileController {
 	public ResponseEntity<?> getProfile(@PathVariable String username){
 		try {
 			Profile profile = profileService.getProfile(username);
-			return new ResponseEntity<>(profile, HttpStatus.FOUND);
+			return new ResponseEntity<>(profile, HttpStatus.OK);
 		}
 		catch(Exception e) {
 			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -37,7 +39,7 @@ public class ProfileController {
 	}
 	
 	@PutMapping("/{username}/update")
-	public ResponseEntity<?> updateProfile(@AuthenticationPrincipal UserPrincipal principal, @RequestPart("profile") Profile profile, @PathVariable String username, @RequestPart Optional<MultipartFile> imageFile) throws Exception{
+	public ResponseEntity<?> updateProfile(@AuthenticationPrincipal UserPrincipal principal, @RequestPart("profile") Profile profile, @PathVariable String username, @RequestPart(value = "imageFile", required = false) Optional<MultipartFile> imageFile) throws Exception{
 		if(!principal.getUsername().equals(username)) {
 			return new ResponseEntity<>("You don't have access to modify this profile",HttpStatus.UNAUTHORIZED);
 		}

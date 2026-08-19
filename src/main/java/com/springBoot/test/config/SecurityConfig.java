@@ -32,13 +32,14 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http.csrf(csrf -> csrf.disable()) // Disable CSRF token;
 			.authorizeHttpRequests(request -> request
-					.requestMatchers("/login","/register").permitAll()
+					.requestMatchers("/login","/register", "/products").permitAll()
 					.requestMatchers("/products/add", "/products/delete").hasRole("ADMIN")
 					.requestMatchers("/cart/**", "/orders/**").hasAnyRole("ADMIN", "USER")
 					.anyRequest().authenticated())
 			//.formLogin(Customizer.withDefaults()) // Webpage login;
 			.httpBasic(Customizer.withDefaults()) // Postman login;
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.logout(logout -> logout.disable()) // Disable Spring Security default logout to use our custom UserController logout endpoint
 			.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 			.build();
 	}
