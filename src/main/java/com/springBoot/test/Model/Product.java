@@ -20,6 +20,8 @@ public class Product implements Serializable {
 	private Integer id;
 	private Integer price;
 	private String name;
+	
+	@Column(length = 1000)
 	private String description;
 	private String brand;
 	private LocalDate launchDate;

@@ -6,24 +6,74 @@ import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.springBoot.test.Model.Product;
+import com.springBoot.test.Model.UserPrincipal;
+
 import reactor.core.publisher.Flux;
 
 @Service
 public class AiService {
-	
+
 	@Autowired
 	private ChatClient chatClient;
-	
-	
-	public String getResponse(String prompt){
+
+	@Autowired
+	private ProductService productService;
+
+	/**
+	 * Streams an LLM response token-by-token.
+	 *
+	 * When a productId is provided (i.e. the user is on a product page), the product
+	 * is fetched directly from the database and its details are embedded into the system
+	 * prompt. This avoids runtime tool calls entirely, which is necessary because
+	 * Gemini thinking models attach an opaque thought_signature to every tool-call part —
+	 * a field that Spring AI's ChatMemory does NOT persist. Sending history without
+	 * thought_signatures causes a 400 ClientException on subsequent turns.
+	 */
+	public Flux<String> getResponse(UserPrincipal principal, String userPrompt, Integer productId) {
+
+		String systemContext;
+
+		if (productId != null) {
+			Product product = productService.getProductById(productId);
+			if (product != null) {
+				systemContext = String.format(
+					"You are a helpful shopping assistant. " +
+					"The user is currently viewing the following product:\n" +
+					"  - ID: %d\n" +
+					"  - Name: %s\n" +
+					"  - Brand: %s\n" +
+					"  - Price: $%s\n" +
+					"  - Description: %s\n" +
+					"  - Stock: %s units available\n\n" +
+					"Use these details to answer the user's question accurately. " +
+					"Also leverage the knowledge base for any additional context.",
+					product.getId(),
+					product.getName(),
+					product.getBrand() != null ? product.getBrand() : "N/A",
+					product.getPrice(),
+					product.getDescription() != null ? product.getDescription() : "No description available",
+					product.getQuantity() != null ? product.getQuantity() : 0
+				);
+			} else {
+				systemContext = "You are a helpful shopping assistant. " +
+					"The user referenced product ID " + productId + " but it could not be found. " +
+					"Let the user know and offer to help with other products.";
+			}
+		} else {
+			systemContext = "You are a helpful shopping assistant for an online store. " +
+				"Use the knowledge base to answer questions about products, prices, availability, and recommendations accurately.";
+		}
+
 		return this.chatClient
-				.prompt(prompt)
-				.options(GoogleGenAiChatOptions.builder()
-						.thinkingBudget(150)
-						.build())
-				.advisors(a->a.param(ChatMemory.CONVERSATION_ID, "user"))
-				.call()
+				.prompt()
+//				.options(GoogleGenAiChatOptions.builder()
+//						.thinkingBudget(0) // disable thinking for faster streaming
+//						.build())
+				.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, principal.getUsername()))
+				.system(systemContext)
+				.user(userPrompt)
+				.stream()
 				.content();
 	}
-	
 }

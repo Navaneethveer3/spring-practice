@@ -3,6 +3,9 @@ package com.springBoot.test.Service;
 import java.io.IOException;
 import java.util.*;
 
+import org.springframework.ai.document.Document;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -20,6 +23,8 @@ public class ProductService {
 	@Autowired
 	private ProductRepository repo;
 	
+	@Autowired
+	private VectorStore vectorStore;
 	
 	@Transactional(readOnly = true)
 	public List<Product> getProducts(){
@@ -29,6 +34,7 @@ public class ProductService {
 	
 	@Transactional(readOnly = true)
 	@Cacheable(key = "#prodId", value = "products")
+	@Tool
 	public Product getProductById(int prodId) {
 		return repo.findById(prodId).orElse(null);
 	}
@@ -37,13 +43,34 @@ public class ProductService {
 	
 	@Transactional
 	public Product addProduct(Product prod, MultipartFile imageFile) throws IOException {
-		if(imageFile!=null && imageFile.getSize()>MAX_FILE_SIZE) {
-			throw new RuntimeException("Image should be within 200KB");
+		if(imageFile != null && !imageFile.isEmpty()) {
+			if(imageFile.getSize() > MAX_FILE_SIZE) {
+				throw new RuntimeException("Image should be within 200KB");
+			}
+			prod.setImageName(imageFile.getOriginalFilename());
+			prod.setImageType(imageFile.getContentType());
+			prod.setImageData(imageFile.getBytes());
 		}
-		prod.setImageName(imageFile.getOriginalFilename());
-		prod.setImageType(imageFile.getContentType());
-		prod.setImageData(imageFile.getBytes());
-		return repo.save(prod);
+		
+		Product saved = repo.save(prod);
+		
+		try {
+			String prodDetails = """
+					product details :
+						id : %s
+						name : %s,
+						price : %s,
+						description : %s,
+						brand : %s
+					""".formatted(saved.getId(), saved.getName(), saved.getPrice(), saved.getDescription(), saved.getBrand());
+			
+			Document document = new Document(prodDetails);
+			vectorStore.add(List.of(document));
+		} catch (Exception e) {
+			System.err.println("Warning: VectorStore indexing skipped for product " + saved.getId() + ": " + e.getMessage());
+		}
+		
+		return saved;
 	}
 	
 	@Transactional

@@ -141,43 +141,45 @@ const Home = () => {
       ) : (
         <div className="grid grid-cols-1 grid-cols-2 grid-cols-3 grid-cols-4">
           {products.map((product) => (
-            <Link to={`/product/${product.id}`} key={product.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div className="product-card glass-panel">
-                <div className="product-image-wrapper">
-                  {product.imageData ? (
-                    <img
-                      src={`data:${product.imageType};base64,${product.imageData}`}
-                      alt={product.name}
-                    />
+            <div
+              key={product.id}
+              className="product-card glass-panel"
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate(`/product/${product.id}`)}
+            >
+              <div className="product-image-wrapper">
+                {product.imageData ? (
+                  <img
+                    src={`data:${product.imageType};base64,${product.imageData}`}
+                    alt={product.name}
+                  />
+                ) : (
+                  <div className="product-image-placeholder">No Image</div>
+                )}
+              </div>
+              <div className="product-info">
+                {product.brand && <div className="product-brand-badge">{product.brand}</div>}
+                <h3 className="product-title">{product.name}</h3>
+                {getStockBadge(product.quantity)}
+                <div className="product-price">${product.price}</div>
+                <div className="product-actions" onClick={(e) => e.stopPropagation()}>
+                  {role === 'ADMIN' ? (
+                    <Link to={`/edit-product/${product.id}`} className="btn btn-secondary btn-sm" style={{ flex: 1 }}>
+                      Edit
+                    </Link>
                   ) : (
-                    <div className="product-image-placeholder">No Image</div>
+                    <button
+                      onClick={(e) => handleAddToCart(e, product.id)}
+                      className="btn btn-primary btn-sm"
+                      style={{ flex: 1 }}
+                      disabled={!product.quantity || product.quantity <= 0}
+                    >
+                      Add to Cart
+                    </button>
                   )}
                 </div>
-                <div className="product-info">
-                  {product.brand && <div className="product-brand-badge">{product.brand}</div>}
-                  <h3 className="product-title">{product.name}</h3>
-                  {getStockBadge(product.quantity)}
-                  <div className="product-price">${product.price}</div>
-                  <div className="product-actions">
-                    {role === 'ADMIN' ? (
-                      <Link to={`/edit-product/${product.id}`} className="btn btn-secondary btn-sm" style={{ flex: 1 }}
-                        onClick={(e) => e.stopPropagation()}>
-                        Edit
-                      </Link>
-                    ) : (
-                      <button
-                        onClick={(e) => handleAddToCart(e, product.id)}
-                        className="btn btn-primary btn-sm"
-                        style={{ flex: 1 }}
-                        disabled={!product.quantity || product.quantity <= 0}
-                      >
-                        Add to Cart
-                      </button>
-                    )}
-                  </div>
-                </div>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

@@ -37,7 +37,7 @@ public class HomeController {
 	}
 	
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<?> addProduct(@RequestPart("prod") Product prod, @RequestPart("image") MultipartFile image) {
+	public ResponseEntity<?> addProduct(@RequestPart("prod") Product prod, @RequestPart(value = "image", required = false) MultipartFile image) {
 		try{
 			Product pro = ps.addProduct(prod,image);
 			return new ResponseEntity<>(pro,HttpStatus.CREATED);

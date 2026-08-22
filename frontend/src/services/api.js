@@ -75,4 +75,61 @@ export const cancelOrder = (orderId) => api.post(`/orders/${orderId}`);
 export const getProfile = (username) => api.get(`/profile/${username}`);
 export const updateProfile = (username, formData) => api.put(`/profile/${username}/update`, formData, { headers: { 'Content-Type': 'multipart/form-data' }});
 
+// ===== AI Chat API =====
+/**
+ * Opens a Server-Sent Events stream to the AI chat endpoint.
+ * @param {string} prompt - The user's message
+ * @param {number|null} productId - Current product ID if on a product page
+ * @param {function} onChunk - Callback called with each streamed token
+ * @param {function} onDone - Callback called when the stream closes
+ * @param {function} onError - Callback called on error
+ * @returns {EventSource} - The event source instance (call .close() to abort)
+ */
+export const streamChat = (prompt, productId, onChunk, onDone, onError) => {
+  const token = localStorage.getItem('accessToken');
+  const params = new URLSearchParams({ prompt });
+  if (productId != null) params.append('productId', productId);
+
+  // EventSource doesn't support custom headers natively, so we append token as a query param
+  // The backend security config must allow this via a query-parameter token filter.
+  // As a workaround we use fetch() with ReadableStream for proper auth header support.
+  const controller = new AbortController();
+
+  fetch(`${API_URL}/ai/chat?${params.toString()}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'text/event-stream',
+    },
+    signal: controller.signal,
+  }).then(response => {
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    const read = () => {
+      reader.read().then(({ done, value }) => {
+        if (done) { onDone(); return; }
+        const text = decoder.decode(value, { stream: true });
+        // SSE format: lines starting with "data:"
+        const lines = text.split('\n');
+        lines.forEach(line => {
+          if (line.startsWith('data:')) {
+            const chunk = line.slice(5).trimStart();
+            if (chunk && chunk !== '[DONE]') onChunk(chunk);
+          }
+        });
+        read();
+      }).catch(err => {
+        if (err.name !== 'AbortError') onError(err);
+      });
+    };
+    read();
+  }).catch(err => {
+    if (err.name !== 'AbortError') onError(err);
+  });
+
+  // Return an object with a close method to let callers abort
+  return { close: () => controller.abort() };
+};
+
 export default api;

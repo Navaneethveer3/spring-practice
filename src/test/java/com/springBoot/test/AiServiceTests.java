@@ -10,6 +10,8 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import com.springBoot.test.Model.UserPrincipal;
+import com.springBoot.test.Model.Users;
 import com.springBoot.test.Service.AiService;
 
 @SpringBootTest
@@ -22,7 +24,10 @@ class AiServiceTests {
 	@Test
 	void getResponse() {
 		String prompt = "Tell me about Sympy in one line.";
-		String response = this.service.getResponse(prompt);
+		Users user = new Users();
+		user.setUsername("tester");
+		UserPrincipal principal = new UserPrincipal(user);
+		String response = this.service.chat(prompt);
 		System.out.println(response);
 	}
 	
