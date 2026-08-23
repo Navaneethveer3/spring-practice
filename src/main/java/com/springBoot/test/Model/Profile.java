@@ -1,6 +1,7 @@
 package com.springBoot.test.Model;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -29,9 +30,13 @@ public class Profile {
 	@Lob
 	private byte[] imageData;
 	
-	@OneToOne(cascade = CascadeType.ALL)
+	@OneToOne
 	@JoinColumn(name = "user_id")
 	private Users user;
+	
+	@JsonIgnore
+	@OneToMany(mappedBy = "profile", fetch = FetchType.LAZY)
+	private List<Review> reviews;
 
 	public Integer getId() {
 		return id;
@@ -95,6 +100,14 @@ public class Profile {
 
 	public void setUser(Users user) {
 		this.user = user;
+	}
+
+	public List<Review> getReviews() {
+		return reviews;
+	}
+
+	public void setReviews(List<Review> reviews) {
+		this.reviews = reviews;
 	}
 	
 	

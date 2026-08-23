@@ -20,16 +20,14 @@ public class AiService {
 	@Autowired
 	private ProductService productService;
 
-	/**
-	 * Streams an LLM response token-by-token.
-	 *
-	 * When a productId is provided (i.e. the user is on a product page), the product
-	 * is fetched directly from the database and its details are embedded into the system
-	 * prompt. This avoids runtime tool calls entirely, which is necessary because
-	 * Gemini thinking models attach an opaque thought_signature to every tool-call part —
-	 * a field that Spring AI's ChatMemory does NOT persist. Sending history without
-	 * thought_signatures causes a 400 ClientException on subsequent turns.
-	 */
+	
+	public String chat(String prompt) {
+		return chatClient
+				.prompt(prompt)
+				.call()
+				.content();
+	}
+	
 	public Flux<String> getResponse(UserPrincipal principal, String userPrompt, Integer productId) {
 
 		String systemContext;

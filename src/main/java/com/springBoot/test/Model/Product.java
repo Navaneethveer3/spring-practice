@@ -33,8 +33,13 @@ public class Product implements Serializable {
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "product", fetch = FetchType.LAZY)
 	private List<OrderItem> item;
 	
+	@JsonIgnore
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "product", fetch = FetchType.LAZY)
+	private List<Review> reviews;
+	
 	@Lob
 	private byte[] imageData;
+	
 	public Integer getId() {
 		return id;
 	}
@@ -101,6 +106,13 @@ public class Product implements Serializable {
 	public void setItem(List<OrderItem> item) {
 		this.item = item;
 	}
+	public List<Review> getReviews() {
+		return reviews;
+	}
+	public void setReviews(List<Review> reviews) {
+		this.reviews = reviews;
+	}
+	
 	
 	
 }
