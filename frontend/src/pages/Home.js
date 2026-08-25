@@ -161,7 +161,7 @@ const Home = () => {
                 {product.brand && <div className="product-brand-badge">{product.brand}</div>}
                 <h3 className="product-title">{product.name}</h3>
                 {getStockBadge(product.quantity)}
-                <div className="product-price">${product.price}</div>
+                <div className="product-price">₹{product.price}</div>
                 <div className="product-actions" onClick={(e) => e.stopPropagation()}>
                   {role === 'ADMIN' ? (
                     <Link to={`/edit-product/${product.id}`} className="btn btn-secondary btn-sm" style={{ flex: 1 }}>

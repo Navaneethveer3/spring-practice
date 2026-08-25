@@ -69,7 +69,13 @@ export const placeOrder = () => api.post('/cart/place-order');
 
 // ===== Orders API =====
 export const getOrders = () => api.get('/orders');
-export const cancelOrder = (orderId) => api.post(`/orders/${orderId}`);
+export const getOrderById = (orderId) => api.get(`/orders/${orderId}`);
+export const cancelOrder = (orderId) => api.post(`/orders/${orderId}/cancel`);
+
+// ===== Payments API =====
+export const createPaymentOrder = () => api.post('/payments/create-order');
+export const verifyPayment = (paymentData) => api.post('/payments/verify', paymentData);
+
 
 // ===== Profile API =====
 export const getProfile = (username) => api.get(`/profile/${username}`);

@@ -121,7 +121,7 @@ const ProductDetails = () => {
           <h1 style={{ fontSize: '1.75rem', marginBottom: '1rem', background: 'none', WebkitTextFillColor: 'var(--text-primary)' }}>{product.name}</h1>
 
           <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary-color)', marginBottom: '1rem' }}>
-            ${product.price}
+            ₹{product.price}
           </div>
 
           <div className={`stock-badge ${stock.class}`} style={{ marginBottom: '1.5rem' }}>

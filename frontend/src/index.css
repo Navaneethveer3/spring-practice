@@ -1448,3 +1448,328 @@ textarea.form-control {
   }
 }
 
+/* =========================================================
+   FLIPKART / AMAZON STYLE ORDERS (V2) & PAYMENT UX
+   ========================================================= */
+
+.order-card-v2 {
+  background: var(--surface-color);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.order-card-v2:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: var(--shadow-md);
+}
+
+.ocv2-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(15, 23, 42, 0.65);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.ocv2-header-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.ocv2-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--surface-border);
+}
+
+.ocv2-label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.ocv2-value {
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ocv2-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ocv2-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Preview strip */
+.ocv2-preview {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  gap: 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.015);
+  transition: background var(--transition-fast);
+}
+
+.ocv2-preview:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.ocv2-preview-images {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.ocv2-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--surface-border);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.ocv2-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.ocv2-thumb-more {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px dashed rgba(245, 158, 11, 0.4);
+}
+
+.ocv2-preview-names {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ocv2-product-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ocv2-expand-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--surface-border);
+  color: var(--text-secondary);
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.ocv2-expand-btn:hover {
+  background: rgba(245, 158, 11, 0.18);
+  color: var(--primary-color);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+/* Expanded details panel */
+.ocv2-detail-panel {
+  padding: 1.5rem;
+  border-top: 1px solid var(--surface-border);
+  background: rgba(0, 0, 0, 0.18);
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  animation: fadeIn 0.25s ease;
+}
+
+@media (max-width: 860px) {
+  .ocv2-detail-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ocv2-section-title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.ocv2-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ocv2-item-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-border);
+}
+
+.ocv2-item-img {
+  width: 58px;
+  height: 58px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.ocv2-item-img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.ocv2-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ocv2-item-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  display: block;
+  transition: color var(--transition-fast);
+}
+
+.ocv2-item-name:hover {
+  color: var(--primary-color);
+}
+
+.ocv2-item-brand {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.ocv2-item-qty {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  flex-shrink: 0;
+  padding: 0.2rem 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+}
+
+.ocv2-item-price {
+  text-align: right;
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 1rem;
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.ocv2-item-unit {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* Payment detail box in expanded order */
+.ocv2-payment-section {
+  background: rgba(255, 255, 255, 0.025);
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--surface-border);
+  height: fit-content;
+}
+
+.ocv2-payment-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ocv2-payment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+}
+
+/* Payment trust badges */
+.payment-trust-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-border);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Button Spinner */
+.btn-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+

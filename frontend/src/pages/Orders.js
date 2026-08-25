@@ -2,21 +2,183 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getOrders, cancelOrder } from '../services/api';
 
+const STATUS_CONFIG = {
+  PAID:      { label: 'Paid',      color: 'var(--success-color)',  bg: 'rgba(34,197,94,0.12)',   icon: '✅' },
+  PENDING:   { label: 'Pending',   color: 'var(--warning-color)',  bg: 'rgba(245,158,11,0.12)',  icon: '⏳' },
+  FAILED:    { label: 'Failed',    color: 'var(--error-color)',    bg: 'rgba(239,68,68,0.12)',   icon: '❌' },
+  CANCELLED: { label: 'Cancelled', color: 'var(--text-muted)',     bg: 'rgba(100,116,139,0.12)', icon: '🚫' },
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+const OrderCard = ({ order, onCancel }) => {
+  const [expanded, setExpanded] = useState(false);
+  const status = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
+  const orderTotal = order.price || order.item?.reduce((acc, oi) => acc + (oi.product?.price || 0) * oi.quantity, 0) || 0;
+  const firstItems = order.item?.slice(0, 2) || [];
+  const extraCount = (order.item?.length || 0) - 2;
+
+  return (
+    <div className="order-card-v2">
+      {/* ── Top bar ── */}
+      <div className="ocv2-header">
+        <div className="ocv2-header-left">
+          <div className="ocv2-order-id">
+            <span className="ocv2-label">Order ID</span>
+            <span className="ocv2-value font-mono">#{order.id}</span>
+          </div>
+          <div className="ocv2-divider" />
+          <div>
+            <span className="ocv2-label">Placed on</span>
+            <span className="ocv2-value">{formatDate(order.createdAt)}</span>
+          </div>
+          <div className="ocv2-divider" />
+          <div>
+            <span className="ocv2-label">Total</span>
+            <span className="ocv2-value" style={{ color: 'var(--primary-color)', fontWeight: 700, fontSize: '1rem' }}>
+              ₹{orderTotal.toFixed ? orderTotal.toFixed(2) : orderTotal}
+            </span>
+          </div>
+          <div className="ocv2-divider" />
+          <div>
+            <span className="ocv2-label">Items</span>
+            <span className="ocv2-value">{order.item?.length || 0}</span>
+          </div>
+        </div>
+        <div className="ocv2-header-right">
+          <span
+            className="ocv2-status-badge"
+            style={{ color: status.color, background: status.bg }}
+          >
+            {status.icon} {status.label}
+          </span>
+          {order.status === 'PENDING' || order.status === 'PAID' ? (
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={() => onCancel(order.id)}
+            >
+              Cancel
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ── Product Preview Strip ── */}
+      <div className="ocv2-preview" onClick={() => setExpanded(e => !e)}>
+        <div className="ocv2-preview-images">
+          {firstItems.map((oi, idx) => (
+            oi.product?.imageData ? (
+              <img
+                key={idx}
+                src={`data:${oi.product.imageType};base64,${oi.product.imageData}`}
+                alt={oi.product.name}
+                className="ocv2-thumb"
+                title={oi.product.name}
+              />
+            ) : (
+              <div key={idx} className="ocv2-thumb ocv2-thumb-placeholder">📦</div>
+            )
+          ))}
+          {extraCount > 0 && (
+            <div className="ocv2-thumb ocv2-thumb-more">+{extraCount}</div>
+          )}
+        </div>
+        <div className="ocv2-preview-names">
+          {firstItems.map((oi, idx) => (
+            <span key={idx} className="ocv2-product-name">{oi.product?.name}</span>
+          ))}
+          {extraCount > 0 && <span className="text-muted text-sm">& {extraCount} more</span>}
+        </div>
+        <button className="ocv2-expand-btn">
+          {expanded ? '▲ Less' : '▼ Details'}
+        </button>
+      </div>
+
+      {/* ── Expanded Detail Panel ── */}
+      {expanded && (
+        <div className="ocv2-detail-panel">
+          {/* Items table */}
+          <div className="ocv2-items-section">
+            <h4 className="ocv2-section-title">Order Items</h4>
+            <div className="ocv2-items-list">
+              {order.item?.map((oi) => (
+                <div key={oi.id} className="ocv2-item-row">
+                  {oi.product?.imageData ? (
+                    <img
+                      src={`data:${oi.product.imageType};base64,${oi.product.imageData}`}
+                      alt={oi.product.name}
+                      className="ocv2-item-img"
+                    />
+                  ) : (
+                    <div className="ocv2-item-img ocv2-item-img-placeholder">📦</div>
+                  )}
+                  <div className="ocv2-item-info">
+                    <Link to={`/product/${oi.product?.id}`} className="ocv2-item-name">
+                      {oi.product?.name}
+                    </Link>
+                    {oi.product?.brand && (
+                      <div className="ocv2-item-brand">{oi.product.brand}</div>
+                    )}
+                  </div>
+                  <div className="ocv2-item-qty">Qty: {oi.quantity}</div>
+                  <div className="ocv2-item-price">
+                    ₹{((oi.product?.price || 0) * oi.quantity).toFixed(2)}
+                    <div className="ocv2-item-unit">₹{oi.product?.price} / unit</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Payment Info */}
+          <div className="ocv2-payment-section">
+            <h4 className="ocv2-section-title">Payment Details</h4>
+            <div className="ocv2-payment-grid">
+              <div className="ocv2-payment-row">
+                <span className="ocv2-label">Payment Status</span>
+                <span style={{ color: status.color, fontWeight: 600 }}>{status.icon} {status.label}</span>
+              </div>
+              <div className="ocv2-payment-row">
+                <span className="ocv2-label">Razorpay Order ID</span>
+                <span className="ocv2-value font-mono text-sm">{order.razorpayOrderId || '—'}</span>
+              </div>
+              <div className="ocv2-payment-row">
+                <span className="ocv2-label">Payment ID</span>
+                <span className="ocv2-value font-mono text-sm">{order.razorpayPaymentId || '—'}</span>
+              </div>
+              <div className="ocv2-payment-row">
+                <span className="ocv2-label">Amount Paid</span>
+                <span className="ocv2-value" style={{ color: 'var(--primary-color)', fontWeight: 700 }}>
+                  ₹{orderTotal.toFixed ? orderTotal.toFixed(2) : orderTotal}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  useEffect(() => { fetchOrders(); }, []);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const response = await getOrders();
-      setOrders(response.data || []);
+      // Sort newest first
+      const sorted = (response.data || []).sort((a, b) => b.id - a.id);
+      setOrders(sorted);
       setError('');
     } catch (err) {
       setError('Failed to fetch your orders.');
@@ -46,7 +208,7 @@ const Orders = () => {
       <div className="container">
         <h1 className="gradient-text mb-6">My Orders</h1>
         {[1, 2].map(i => (
-          <div key={i} className="skeleton mb-4" style={{ height: '180px' }}></div>
+          <div key={i} className="skeleton mb-4" style={{ height: '130px', borderRadius: '12px' }}></div>
         ))}
       </div>
     );
@@ -56,12 +218,17 @@ const Orders = () => {
     <div className="container animate-fade-in">
       {toast && (
         <div className="toast-container">
-          <div className={`toast toast-${toast.type}`}>{toast.type === 'success' ? '✅' : '❌'} {toast.text}</div>
+          <div className={`toast toast-${toast.type}`}>
+            {toast.type === 'success' ? '✅' : '❌'} {toast.text}
+          </div>
         </div>
       )}
 
       <div className="page-header">
-        <h1 className="gradient-text">My Orders</h1>
+        <div>
+          <h1 className="gradient-text">My Orders</h1>
+          <p className="text-muted text-sm mt-1">{orders.length} order{orders.length !== 1 ? 's' : ''} found</p>
+        </div>
         <Link to="/" className="btn btn-secondary btn-sm">← Continue Shopping</Link>
       </div>
 
@@ -76,69 +243,9 @@ const Orders = () => {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {orders.map((order) => {
-            const orderTotal = order.item?.reduce((acc, oi) => acc + (oi.product.price * oi.quantity), 0) || order.price || 0;
-
-            return (
-              <div key={order.id} className="order-card">
-                {/* Order Header */}
-                <div className="order-header">
-                  <div className="flex gap-6 flex-wrap items-center">
-                    <div>
-                      <div className="text-xs text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Order ID</div>
-                      <div className="font-bold">#{order.id}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</div>
-                      <div className="font-bold" style={{ color: 'var(--primary-color)', fontSize: '1.1rem' }}>
-                        ${orderTotal.toFixed(2)}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items</div>
-                      <div className="font-semibold">{order.item?.length || 0} products</div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 items-center">
-                    <span className="status-badge status-active">● Active</span>
-                    <button
-                      onClick={() => handleCancelOrder(order.id)}
-                      className="btn btn-danger btn-sm"
-                    >
-                      Cancel Order
-                    </button>
-                  </div>
-                </div>
-
-                {/* Order Items */}
-                <div className="order-body">
-                  {order.item?.map((orderItem) => (
-                    <div key={orderItem.id} className="order-item-card">
-                      {orderItem.product.imageData ? (
-                        <img
-                          src={`data:${orderItem.product.imageType};base64,${orderItem.product.imageData}`}
-                          alt={orderItem.product.name}
-                          className="order-item-image"
-                        />
-                      ) : (
-                        <div className="order-item-image" style={{ background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                          No Img
-                        </div>
-                      )}
-                      <div>
-                        <div className="font-semibold text-sm" style={{ marginBottom: '0.2rem' }}>{orderItem.product.name}</div>
-                        <div className="text-xs text-muted">Qty: {orderItem.quantity} × ${orderItem.product.price}</div>
-                        <div className="text-sm font-bold mt-1" style={{ color: 'var(--primary-color)' }}>
-                          ${(orderItem.product.price * orderItem.quantity).toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          {orders.map((order) => (
+            <OrderCard key={order.id} order={order} onCancel={handleCancelOrder} />
+          ))}
         </div>
       )}
     </div>
@@ -146,3 +253,4 @@ const Orders = () => {
 };
 
 export default Orders;
+

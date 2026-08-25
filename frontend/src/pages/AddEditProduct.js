@@ -102,7 +102,7 @@ const AddEditProduct = () => {
                 <input type="text" name="brand" className="form-control" value={product.brand} onChange={handleInputChange} required placeholder="e.g. Apple" />
               </div>
               <div className="form-group">
-                <label>Price ($)</label>
+                <label>Price (₹)</label>
                 <input type="number" name="price" className="form-control" value={product.price} onChange={handleInputChange} required min="0" placeholder="0" />
               </div>
               <div className="form-group">

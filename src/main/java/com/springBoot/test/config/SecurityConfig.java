@@ -45,7 +45,7 @@ public class SecurityConfig {
 					.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
 					.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 					.requestMatchers("/login", "/register", "/refresh", "/products", "/products/**", "/error").permitAll()
-					.requestMatchers("/cart/**", "/orders/**", "/ai/**", "/profile/**", "/logout", "/reset-password").hasAnyRole("ADMIN", "USER")
+					.requestMatchers("/cart/**", "/orders/**", "/ai/**", "/profile/**", "/logout", "/reset-password", "/payments/**").hasAnyRole("ADMIN", "USER")
 					.anyRequest().authenticated())
 			.httpBasic(Customizer.withDefaults())
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
