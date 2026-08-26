@@ -54,5 +54,10 @@ public class OrderService {
 		}
 		return null;
 	}
+	
+	public List<Order> getAllOrders(){
+		return orderRepo.findAll();
+	}
+	
 }
 
