@@ -321,7 +321,7 @@ This project demonstrates a production-oriented approach to building an e-commer
 
 **Key Achievements**
 
-- 🚀 Improved API response time from 33 ms to 11 ms
+- 🚀 **Improved API response time from 33 ms to 11 ms**
 - ⚡ Reduced redundant database operations by resolving N+1 queries
 - 💾 Implemented caching for frequently accessed data
 - 📊 Added database indexing and pagination for large datasets
