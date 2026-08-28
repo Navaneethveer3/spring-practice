@@ -329,4 +329,4 @@ This project demonstrates a production-oriented approach to building an e-commer
 - 🤖 Integrated Spring AI for a conversational customer assistant
 - 🔄 Implemented an event-driven microservices architecture
 - 🐳 Containerized services using Docker
-- ☁️ Prepared the application for Azure deployment
+- ☁️ Prepared the application for Azure deploymentt
