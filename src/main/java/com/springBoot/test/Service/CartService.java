@@ -1,6 +1,7 @@
 package com.springBoot.test.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -113,6 +114,7 @@ public class CartService {
 			savedOrder.getItem().add(orderItem);
 			
 			product.setQuantity(product.getQuantity()-quantity);
+			product.setVersion(UUID.randomUUID());
 			prodRepo.save(product);
 		}
 		cartRepo.deleteAllByUser(user);

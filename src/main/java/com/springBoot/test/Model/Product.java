@@ -6,6 +6,7 @@ import lombok.*;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -39,6 +40,10 @@ public class Product implements Serializable {
 	
 	@Lob
 	private byte[] imageData;
+	
+	@Column(unique = true)
+	@GeneratedValue(strategy = GenerationType.UUID)
+	private UUID version;
 	
 	public Integer getId() {
 		return id;
@@ -111,6 +116,12 @@ public class Product implements Serializable {
 	}
 	public void setReviews(List<Review> reviews) {
 		this.reviews = reviews;
+	}
+	public UUID getVersion() {
+		return version;
+	}
+	public void setVersion(UUID version) {
+		this.version = version;
 	}
 	
 	

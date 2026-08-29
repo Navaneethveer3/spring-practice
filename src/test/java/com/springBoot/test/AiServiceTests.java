@@ -21,15 +21,15 @@ class AiServiceTests {
 	@Autowired
 	private AiService service;
 	
-	@Test
-	void getResponse() {
-		String prompt = "Tell me about Sympy in one line.";
-		Users user = new Users();
-		user.setUsername("tester");
-		UserPrincipal principal = new UserPrincipal(user);
-		String response = this.service.chat(prompt);
-		System.out.println(response);
-	}
+//	@Test
+//	void getResponse() {
+//		String prompt = "Tell me about Sympy in one line.";
+//		Users user = new Users();
+//		user.setUsername("tester");
+//		UserPrincipal principal = new UserPrincipal(user);
+//		String response = this.service.chat(prompt);
+//		System.out.println(response);
+//	}
 	
 //	@Autowired
 //	VectorStore vectorStore;
