@@ -2,6 +2,6 @@ package com.springBoot.test.Model;
 
 public enum Status {
 
-	PAID, FAILED, PENDING, CANCELLED;
+	PAID, FAILED, PENDING, CANCELLED, REFUNDED;
 	
 }

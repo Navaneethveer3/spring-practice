@@ -3,8 +3,10 @@ package com.springBoot.test.Service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import com.springBoot.test.DTO.InventoryDTO;
 import com.springBoot.test.Model.Order;
 import com.springBoot.test.Model.OrderItem;
 import com.springBoot.test.Model.Product;
@@ -22,8 +24,9 @@ public class OrderService {
 	@Autowired
 	private OrderRepository orderRepo;
 	
+	
 	@Autowired
-	private ProductRepository prodRepo;
+	private KafkaTemplate<String, InventoryDTO> kafka;
 	
 	@Transactional
 	public void cancelOrder(Users user, int orderId) {
@@ -33,8 +36,12 @@ public class OrderService {
 				for (OrderItem item : order.getItem()) {
 					Product prod = item.getProduct();
 					if (prod != null) {
-						prod.setQuantity(prod.getQuantity() + item.getQuantity());
-						prodRepo.save(prod);
+						int prodId = prod.getId();
+						int quantity = item.getQuantity();
+						InventoryDTO dto = new InventoryDTO();
+						dto.setId(prodId);
+						dto.setQuantity(quantity);
+						kafka.send("order-cancel", dto);
 					}
 				}
 			}

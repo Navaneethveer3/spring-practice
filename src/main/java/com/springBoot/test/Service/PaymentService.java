@@ -8,10 +8,12 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import com.razorpay.RazorpayClient;
 import com.razorpay.Utils;
+import com.springBoot.test.DTO.InventoryDTO;
 import com.springBoot.test.Model.CartItem;
 import com.springBoot.test.Model.Order;
 import com.springBoot.test.Model.OrderItem;
@@ -31,9 +33,7 @@ public class PaymentService {
 	
 	@Autowired
 	private OrderRepository orderRepo;
-	
-	@Autowired
-	private ProductRepository prodRepo;
+
 	
 	@Autowired
 	private CartItemRepository cartRepo;
@@ -52,6 +52,9 @@ public class PaymentService {
 	
 	@Value("${razorpay.api.secret}")
 	private String apiSecret;
+	
+	@Autowired
+	private KafkaTemplate<String, InventoryDTO> kafka;
 	
 	
 	@Transactional
@@ -121,9 +124,12 @@ public class PaymentService {
 			pendingOrder.setRazorpaySignature(razorpaySignature);
 			for(OrderItem item : pendingOrder.getItem()) {
 				Product prod = item.getProduct();
+				int prodId = prod.getId();
 				int quantity = item.getQuantity();
-				prod.setQuantity(prod.getQuantity()-quantity);
-				prodRepo.save(prod);
+				InventoryDTO dto = new InventoryDTO();
+				dto.setId(prodId);
+				dto.setQuantity(quantity);
+				kafka.send("order-success", dto);
 			}
 			cartRepo.deleteAllByUser(user);
 			cartService.clearCart(user);

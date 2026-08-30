@@ -50,10 +50,6 @@ public class CartController {
 		return new ResponseEntity<>(cartService.getCart(principal.getUser()), HttpStatus.OK);
 	}
 	
-	@PostMapping("/place-order")
-	public ResponseEntity<Order> placeOrder(@AuthenticationPrincipal UserPrincipal principal){
-		return new ResponseEntity<>(cartService.placeOrder(principal.getUser()), HttpStatus.OK);
-	}
 	
 	@PostMapping("/clear-cart")
 	public ResponseEntity<?> clearCart(@AuthenticationPrincipal UserPrincipal principal){

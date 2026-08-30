@@ -91,35 +91,6 @@ public class CartService {
 		return cartRepo.findByUser(user);
 	}
 	
-	@Transactional
-	@Caching(
-			evict = {
-					@CacheEvict(key = "#user.id", value = "cartitems"),
-					@CacheEvict(key = "#user.id", value = "double")
-			}
-		)
-	public Order placeOrder(Users user) {
-		List<CartItem> cart = cartRepo.findByUser(user);
-		Order order = new Order();
-		order.setUser(user);
-		Order savedOrder = orderRepo.save(order);
-		for(CartItem item : cart) {
-			OrderItem orderItem = new OrderItem();
-			Product product = item.getProduct();
-			int quantity = item.getQuantity();
-			
-			orderItem.setProduct(product);
-			orderItem.setQuantity(quantity);
-			orderItem.setOrder(savedOrder);
-			savedOrder.getItem().add(orderItem);
-			
-			product.setQuantity(product.getQuantity()-quantity);
-			product.setVersion(UUID.randomUUID());
-			prodRepo.save(product);
-		}
-		cartRepo.deleteAllByUser(user);
-		return savedOrder;
-	}
 	
 	@Caching(
 			evict = {
