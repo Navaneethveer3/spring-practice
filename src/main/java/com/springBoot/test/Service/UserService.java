@@ -70,6 +70,7 @@ public class UserService {
 	public String login(Users user) throws Exception{
 		Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
 		if(authentication.isAuthenticated()) {
+			
 			return jwt.generateToken(user.getUsername());
 		}
 		else {

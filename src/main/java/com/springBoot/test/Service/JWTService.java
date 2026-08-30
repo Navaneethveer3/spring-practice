@@ -5,6 +5,7 @@ import java.security.Key;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +31,7 @@ public class JWTService {
 		}
 	}
 	
+	@KafkaListener(topics = "generate-jwt-token", groupId = "user-service")
 	public String generateToken(String username) {
 		HashMap<String, Object> claims = new HashMap<>();
 		return Jwts.builder()

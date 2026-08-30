@@ -42,8 +42,14 @@ public class Product implements Serializable {
 	private byte[] imageData;
 	
 	@Column(unique = true)
-	@GeneratedValue(strategy = GenerationType.UUID)
-	private UUID version;
+	private UUID version = UUID.randomUUID();
+
+	@PrePersist
+	public void prePersist() {
+		if (this.version == null) {
+			this.version = UUID.randomUUID();
+		}
+	}
 	
 	public Integer getId() {
 		return id;

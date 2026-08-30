@@ -194,6 +194,18 @@
 		   <artifactId>spring-ai-rag</artifactId>
 		</dependency>
 
+		<!-- Source: https://mvnrepository.com/artifact/org.apache.kafka/kafka -->
+		<dependency>
+		    <groupId>org.apache.kafka</groupId>
+		    <artifactId>kafka_2.13</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.springframework.kafka</groupId>
+		    <artifactId>spring-kafka</artifactId>
+		</dependency>
+
 
 
     </dependencies>
