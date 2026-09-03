@@ -45,6 +45,9 @@ public class PaymentService {
 	private UserRepo userRepo;
 	
 	@Autowired
+	private ProductRepository prodRepo;
+	
+	@Autowired
 	private RazorpayClient razorpayClient;
 	
 	@Value("${razorpay.api.key}")
@@ -140,6 +143,50 @@ public class PaymentService {
 			orderRepo.save(pendingOrder);
 			throw new Exception("Payment verification failed");
 		}
+	}
+	
+	
+	@Transactional
+	public Map<String,String> placeOrder(String username, int prodId, int quantity) throws Exception{
+		Users user = userRepo.findByUsername(username);
+		if(user==null) {
+			throw new Exception("User not authenticated");
+		}
+		Product product = prodRepo.findById(prodId).orElse(null);
+		if(product==null) {
+			throw new Exception("Product not found");
+		}
+		double orderValue = product.getPrice()*quantity;
+		long convertedAmount = (long)Math.round(orderValue*100);
+		JSONObject orderRequest = new JSONObject();
+		orderRequest.put("amount", convertedAmount);
+		orderRequest.put("currency", "INR");
+		orderRequest.put("receipt", "txn_"+user.getUsername()+System.currentTimeMillis());
+		
+		com.razorpay.Order razorpayOrder = razorpayClient.orders.create(orderRequest);
+		
+		Order order = new Order();
+		order.setUser(user);
+		order.setPrice((int)orderValue);
+		order.setStatus(Status.PENDING);
+		order.setRazorpayOrderId(razorpayOrder.get("id"));
+		OrderItem item = new OrderItem();
+		item.setOrder(order);
+		item.setProduct(product);
+		item.setQuantity(quantity);
+		order.getItem().add(item);
+		InventoryDTO dto = new InventoryDTO();
+		dto.setId(prodId);
+		dto.setQuantity(quantity);
+		kafka.send("place-order", dto);
+		Order savedOrder = orderRepo.save(order);
+		Map<String,String> payload = new HashMap<>();
+		payload.put("razorpayOrderId", razorpayOrder.get("id"));
+		payload.put("amount", Long.toString(convertedAmount));
+		payload.put("currency", "INR");
+		payload.put("keyId", apiKey);
+		payload.put("orderId", Integer.toString(savedOrder.getId()));
+		return payload;
 	}
 	
 }
