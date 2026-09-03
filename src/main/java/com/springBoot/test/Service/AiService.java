@@ -62,6 +62,8 @@ public class AiService {
 			systemContext = "You are a helpful shopping assistant for an online store. " +
 				"Use the knowledge base to answer questions about products, prices, availability, and recommendations accurately.";
 		}
+		
+		systemContext += "\n you have tool access, never execute the tools until you have enough details that are required for the tool execution";
 
 		return this.chatClient
 				.prompt()
