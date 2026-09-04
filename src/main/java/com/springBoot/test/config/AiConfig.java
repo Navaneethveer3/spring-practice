@@ -17,6 +17,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.springBoot.test.Tools.KnowledgeBaseTools;
 import com.springBoot.test.Tools.OrderTools;
 import com.springBoot.test.Tools.PaymentTools;
 import com.springBoot.test.Tools.ProductTools;
@@ -36,21 +37,21 @@ public class AiConfig {
 		return MessageWindowChatMemory
 				.builder()
 				.chatMemoryRepository(jodbcChatMemoryRepository)
-				.maxMessages(10)
+				.maxMessages(4) // Reduced from 10 to 4 to prevent heavy RAG tool results from bloating the context window
 				.build();
 	}
 
 
 	@Bean
 	public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory, VectorStore vectorStore, QueryTransformer queryTransformer,
-								ProductTools prodTools, PaymentTools paymentTools, OrderTools orderTools) {
+								ProductTools prodTools, PaymentTools paymentTools, OrderTools orderTools, KnowledgeBaseTools kbTools) {
 
 		
 		Advisor ragAdvisor = RetrievalAugmentationAdvisor.builder()
-									.queryTransformers(queryTransformer)
+//									.queryTransformers(queryTransformer)
 									.documentRetriever(VectorStoreDocumentRetriever.builder()
 											.similarityThreshold(0.75)
-											.topK(5)
+											.topK(3)
 											.vectorStore(vectorStore)
 											.build())
 									.build();
@@ -58,8 +59,8 @@ public class AiConfig {
 		List<String> guardrails = List.of("password");
 		
 		return builder
-				.defaultTools(prodTools, paymentTools, orderTools)
-				.defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(), ragAdvisor, new SafeGuardAdvisor(guardrails))
+				.defaultTools(prodTools, paymentTools, orderTools, kbTools)
+				.defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(), new SafeGuardAdvisor(guardrails))
 				.build();
 	}
 

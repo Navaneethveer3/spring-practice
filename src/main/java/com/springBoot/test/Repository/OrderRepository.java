@@ -21,7 +21,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
 	Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
 	
-	Optional<List<Order>> findByDeliverystatusAndUserAndStatus(Status status, DeliveryStatus deliveryStatus, Users user);
+	Optional<List<Order>> findByStatusAndDeliveryAndUser(Status status, DeliveryStatus deliveryStatus, Users user);
 	
-	Optional<List<Order>> findTop10ByDeliverystatusAndUser(DeliveryStatus deliveryStatus, Users user);
+	Optional<List<Order>> findTop10ByDeliveryAndUser(DeliveryStatus deliveryStatus, Users user);
 }

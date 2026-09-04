@@ -79,9 +79,97 @@ const markdownComponents = {
   hr: ({ node, ...props }) => <hr className="chat-hr" {...props} />,
 };
 
+// ─── Interactive Refundable Order Cards ──────────────────────────────────────
+function RefundableOrderCards({ orders, onSelect }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '0.5rem' }}>
+      {orders.map((order) => (
+        <div
+          key={order.id}
+          style={{
+            background: 'rgba(99,102,241,0.08)',
+            border: '1px solid rgba(99,102,241,0.25)',
+            borderRadius: '10px',
+            padding: '0.75rem 1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.3rem',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                📦 Order #{order.id}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                {order.item?.map((i) => i.product?.name || 'Item').join(', ')}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontWeight: 800, color: 'var(--primary-color)', fontSize: '0.95rem' }}>
+                ₹{order.price?.toLocaleString('en-IN')}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#4ade80', marginTop: '0.1rem' }}>✅ PAID</div>
+            </div>
+          </div>
+          <button
+            onClick={() => onSelect(order.id)}
+            style={{
+              marginTop: '0.35rem',
+              padding: '0.45rem 0.75rem',
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              border: 'none',
+              borderRadius: '7px',
+              color: '#fff',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'opacity 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
+            ↩️ Cancel & Refund This Order
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Parse refundable orders from AI message content ─────────────────────────
+// The LLM returns a list of Order objects from the tool call. We look for a
+// JSON array embedded in the message where each element has an `id` field and
+// `status === "PAID"` to detect that this is a refundable-orders response.
+function extractRefundableOrders(content) {
+  try {
+    // Try to find a JSON array anywhere in the content
+    const jsonMatch = content.match(/\[[\s\S]*?\]/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    // Validate it looks like order objects with id and status PAID
+    const isOrders = parsed.every(o => o.id && (o.status === 'PAID' || o.razorpayOrderId));
+    return isOrders ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Single message bubble ────────────────────────────────────────────────────
-function ChatMessage({ msg }) {
+function ChatMessage({ msg, onRefundSelect }) {
   const isUser = msg.role === 'user';
+
+  // Check if this is a refundable-orders response from the AI
+  const refundableOrders = !isUser && msg.refundableOrders ? msg.refundableOrders : null;
+
   return (
     <div className={`chat-msg ${isUser ? 'chat-msg-user' : 'chat-msg-ai'}`}>
       {!isUser && <div className="chat-avatar">✦</div>}
@@ -93,6 +181,14 @@ function ChatMessage({ msg }) {
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
               {msg.content}
             </ReactMarkdown>
+            {refundableOrders && refundableOrders.length > 0 && (
+              <RefundableOrderCards orders={refundableOrders} onSelect={onRefundSelect} />
+            )}
+            {refundableOrders && refundableOrders.length === 0 && (
+              <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                No eligible orders found for refund.
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -155,13 +251,12 @@ function ChatWidget({ productId }) {
     }]);
   }, [productId]);
 
-  const sendMessage = useCallback(() => {
-    const text = input.trim();
+  const sendMessage = useCallback((overrideText) => {
+    const text = (overrideText || input).trim();
     if (!text || streaming) return;
 
-    // Append user message
     setMessages(prev => [...prev, { role: 'user', content: text }]);
-    setInput('');
+    if (!overrideText) setInput('');
     setStreaming(true);
     setStreamingText('');
 
@@ -177,7 +272,17 @@ function ChatWidget({ productId }) {
       },
       // onDone
       () => {
-        setMessages(prev => [...prev, { role: 'ai', content: accumulated }]);
+        // After stream finishes, try to parse refundable orders out of the content
+        const refundableOrders = extractRefundableOrders(accumulated);
+
+        setMessages(prev => [...prev, {
+          role: 'ai',
+          content: refundableOrders
+            // If we found order data embedded, strip the raw JSON from display
+            ? accumulated.replace(/\[[\s\S]*?\]/, '').trim() || "Here are your eligible orders for refund. Click one to cancel and refund:"
+            : accumulated,
+          refundableOrders: refundableOrders || undefined,
+        }]);
         setStreamingText('');
         setStreaming(false);
         streamRef.current = null;
@@ -195,6 +300,11 @@ function ChatWidget({ productId }) {
       }
     );
   }, [input, productId, streaming]);
+
+  // Called when user clicks "Refund This Order" on a card
+  const handleRefundSelect = useCallback((orderId) => {
+    sendMessage(`Please cancel and refund order #${orderId}`);
+  }, [sendMessage]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -281,7 +391,7 @@ function ChatWidget({ productId }) {
         {/* Messages */}
         <div className="chat-messages" id="chat-messages-list">
           {messages.map((msg, i) => (
-            <ChatMessage key={i} msg={msg} />
+            <ChatMessage key={i} msg={msg} onRefundSelect={handleRefundSelect} />
           ))}
 
           {/* Live streaming bubble */}
@@ -324,7 +434,7 @@ function ChatWidget({ productId }) {
           ) : (
             <button
               className="chat-send-btn"
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={!input.trim()}
               title="Send"
               id="chat-send-button"

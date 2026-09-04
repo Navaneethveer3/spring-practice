@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 
 import com.springBoot.test.Model.UserPrincipal;
 import com.springBoot.test.Service.AiService;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.http.ResponseEntity;
 
 import reactor.core.publisher.Flux;
 
@@ -17,6 +19,9 @@ public class AiController {
 
 	@Autowired
 	private AiService aiService;
+
+	@Autowired
+	private ChatMemory chatMemory;
 
 	/**
 	 * Streaming chat endpoint. Accepts an optional productId so the LLM
@@ -34,5 +39,11 @@ public class AiController {
 			@RequestParam(required = false) Integer productId) {
 
 		return aiService.getResponse(principal, prompt, productId);
+	}
+
+	@DeleteMapping("/chat/clear")
+	public ResponseEntity<String> clearChatMemory(@AuthenticationPrincipal UserPrincipal principal) {
+		chatMemory.clear(principal.getUsername());
+		return ResponseEntity.ok("Chat memory cleared successfully");
 	}
 }

@@ -20,27 +20,42 @@ public class PaymentTools {
 	private String getAuthenticatedUsername() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
-			throw new IllegalStateException("User must be logged in to initiate payment.");
+			return null;
 		}
 		return auth.getName();
 	}
 	
 	@Tool(description = "create a payment order to place the order with the items in the cart")
-	public Map<String,String> createPayment() throws Exception {
-		String username = getAuthenticatedUsername();
-		return paymentService.createPayment(username);
+	public Map<String,String> createPayment() {
+		try {
+			String username = getAuthenticatedUsername();
+			if (username == null) return Map.of("error", "User must be logged in to initiate payment.");
+			return paymentService.createPayment(username);
+		} catch (Exception e) {
+			return Map.of("error", e.getMessage() != null ? e.getMessage() : "Failed to create payment");
+		}
 	}
 	
 	@Tool(description = "place the order with the current product")
-	public Map<String,String> placeOrder(@ToolParam(description = "id of the product") int prodId, @ToolParam(description = "quantity of the product") int quantity) throws Exception {
-		String username = getAuthenticatedUsername();
-		return paymentService.placeOrder(username, prodId, quantity);
+	public Map<String,String> placeOrder(@ToolParam(description = "id of the product") int prodId, @ToolParam(description = "quantity of the product") int quantity) {
+		try {
+			String username = getAuthenticatedUsername();
+			if (username == null) return Map.of("error", "User must be logged in to place order.");
+			return paymentService.placeOrder(username, prodId, quantity);
+		} catch (Exception e) {
+			return Map.of("error", e.getMessage() != null ? e.getMessage() : "Failed to place order");
+		}
 	}
 	
-	@Tool(description = "refund the payment for an order")
-	public Map<String, Object> refundOrder(@ToolParam(description = "id of the order") int orderId) throws Exception{
-		String username = getAuthenticatedUsername();
-		return paymentService.refund(orderId,username);
+	@Tool(description = "cancel and refund the payment for an order")
+	public Map<String, Object> refundOrder(@ToolParam(description = "id of the order") int orderId) {
+		try {
+			String username = getAuthenticatedUsername();
+			if (username == null) return Map.of("error", "User must be logged in to refund order.");
+			return paymentService.refund(orderId,username);
+		} catch (Exception e) {
+			return Map.of("error", e.getMessage() != null ? e.getMessage() : "Failed to refund order");
+		}
 	}
 	
 }

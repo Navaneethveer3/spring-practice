@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getOrders, cancelOrder } from '../services/api';
+import { getOrders, cancelOrder, refundOrder } from '../services/api';
 
 const STATUS_CONFIG = {
   PAID:      { label: 'Paid',      color: 'var(--success-color)',  bg: 'rgba(34,197,94,0.12)',   icon: '✅' },
   PENDING:   { label: 'Pending',   color: 'var(--warning-color)',  bg: 'rgba(245,158,11,0.12)',  icon: '⏳' },
   FAILED:    { label: 'Failed',    color: 'var(--error-color)',    bg: 'rgba(239,68,68,0.12)',   icon: '❌' },
   CANCELLED: { label: 'Cancelled', color: 'var(--text-muted)',     bg: 'rgba(100,116,139,0.12)', icon: '🚫' },
+  REFUNDED:  { label: 'Refunded',  color: '#a78bfa',               bg: 'rgba(167,139,250,0.12)', icon: '↩️' },
 };
 
 const formatDate = (dateStr) => {
@@ -15,12 +16,14 @@ const formatDate = (dateStr) => {
   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const OrderCard = ({ order, onCancel }) => {
+const OrderCard = ({ order, onCancelOrRefund }) => {
   const [expanded, setExpanded] = useState(false);
   const status = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
   const orderTotal = order.price || order.item?.reduce((acc, oi) => acc + (oi.product?.price || 0) * oi.quantity, 0) || 0;
   const firstItems = order.item?.slice(0, 2) || [];
   const extraCount = (order.item?.length || 0) - 2;
+
+  const canCancel = order.status === 'PENDING' || order.status === 'PAID';
 
   return (
     <div className="order-card-v2">
@@ -56,14 +59,14 @@ const OrderCard = ({ order, onCancel }) => {
           >
             {status.icon} {status.label}
           </span>
-          {order.status === 'PENDING' || order.status === 'PAID' ? (
+          {canCancel && (
             <button
               className="btn btn-danger btn-sm"
-              onClick={() => onCancel(order.id)}
+              onClick={() => onCancelOrRefund(order.id, order.status)}
             >
-              Cancel
+              {order.status === 'PAID' ? '↩️ Cancel & Refund' : 'Cancel'}
             </button>
-          ) : null}
+          )}
         </div>
       </div>
 
@@ -156,6 +159,12 @@ const OrderCard = ({ order, onCancel }) => {
                   ₹{orderTotal.toFixed ? orderTotal.toFixed(2) : orderTotal}
                 </span>
               </div>
+              {order.status === 'REFUNDED' && (
+                <div className="ocv2-payment-row">
+                  <span className="ocv2-label">Refund Status</span>
+                  <span style={{ color: '#a78bfa', fontWeight: 600 }}>↩️ Refunded to original payment method</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -189,17 +198,29 @@ const Orders = () => {
 
   const showToast = (text, type = 'success') => {
     setToast({ text, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3500);
   };
 
-  const handleCancelOrder = async (orderId) => {
-    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+  const handleCancelOrRefund = async (orderId, status) => {
+    const isPaid = status === 'PAID';
+    const confirmMsg = isPaid
+      ? 'This is a PAID order. Cancelling will initiate a full refund to your original payment method. Continue?'
+      : 'Are you sure you want to cancel this order?';
+
+    if (!window.confirm(confirmMsg)) return;
+
     try {
-      await cancelOrder(orderId);
-      showToast('Order cancelled');
+      if (isPaid) {
+        await refundOrder(orderId);
+        showToast('Order cancelled & refund initiated successfully!', 'success');
+      } else {
+        await cancelOrder(orderId);
+        showToast('Order cancelled successfully.', 'success');
+      }
       fetchOrders();
     } catch (err) {
-      showToast('Failed to cancel order', 'error');
+      const msg = err?.response?.data || (isPaid ? 'Failed to process refund.' : 'Failed to cancel order.');
+      showToast(msg, 'error');
     }
   };
 
@@ -244,7 +265,7 @@ const Orders = () => {
       ) : (
         <div className="flex flex-col gap-4">
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} onCancel={handleCancelOrder} />
+            <OrderCard key={order.id} order={order} onCancelOrRefund={handleCancelOrRefund} />
           ))}
         </div>
       )}
@@ -253,4 +274,3 @@ const Orders = () => {
 };
 
 export default Orders;
-

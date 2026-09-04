@@ -60,16 +60,17 @@ public class AiService {
 			}
 		} else {
 			systemContext = "You are a helpful shopping assistant for an online store. " +
-				"Use the knowledge base to answer questions about products, prices, availability, and recommendations accurately.";
+				"Use tools to answer questions about products, prices, availability, recommendations, orders, payments, cancellation and refunds for an order accurately.\n";
 		}
 		
-		systemContext += "\n you have tool access, never execute the tools until you have enough details that are required for the tool execution"
+		systemContext += "use the knowledge searchKnowledgeBase tool to get the information about the products and its details\n"
+				+ "\n you have tool access, never execute the tools until you have enough details that are required for the tool execution. Use these tools when the asks to perform a task like search, cancel, place, refund orders"
 				+ "you need to assist the customers in a very simple way, like the conversations should be very clear and concise but everything should covered that is asked by user in a simple manner";
 
 		return this.chatClient
 				.prompt()
 //				.options(GoogleGenAiChatOptions.builder()
-//						.thinkingBudget(0) // disable thinking for faster streaming
+//						.thinkingBudget(0) // MUST disable thinking — Spring AI's chat memory strips thought_signature from replayed tool calls, causing 400 errors
 //						.build())
 				.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, principal.getUsername()))
 				.system(systemContext)

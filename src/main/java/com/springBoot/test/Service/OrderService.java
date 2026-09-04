@@ -76,7 +76,7 @@ public class OrderService {
 		if(user==null) {
 			throw new Exception("User not authenticated");
 		}
-		Optional<List<Order>> orders = orderRepo.findByDeliverystatusAndUserAndStatus(Status.PAID, DeliveryStatus.Created, user);
+		Optional<List<Order>> orders = orderRepo.findByStatusAndDeliveryAndUser(Status.PAID, DeliveryStatus.Created, user);
 		return orders.get();
 	}
 	
@@ -85,7 +85,7 @@ public class OrderService {
 		if(user==null) {
 			throw new Exception("User not authenticated");
 		}
-		Optional<List<Order>> orders = orderRepo.findTop10ByDeliverystatusAndUser(DeliveryStatus.Delivered, user);
+		Optional<List<Order>> orders = orderRepo.findTop10ByDeliveryAndUser(DeliveryStatus.Delivered, user);
 		return orders.get();
 	}
 	

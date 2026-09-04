@@ -75,7 +75,10 @@ export const cancelOrder = (orderId) => api.post(`/orders/${orderId}/cancel`);
 // ===== Payments API =====
 export const createPaymentOrder = () => api.post('/payments/create-order');
 export const verifyPayment = (paymentData) => api.post('/payments/verify', paymentData);
-
+// Direct product order (Buy Now from product page)
+export const placeDirectOrder = (prodId, quantity) => api.post(`/payments/create-order/${prodId}?quantity=${quantity}`);
+// Refund a paid order
+export const refundOrder = (orderId) => api.post(`/payments/refund/${orderId}`);
 
 // ===== Profile API =====
 export const getProfile = (username) => api.get(`/profile/${username}`);

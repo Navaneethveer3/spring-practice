@@ -20,21 +20,31 @@ public class OrderTools {
 	private String getAuthenticatedUsername() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
-			throw new IllegalStateException("User must be logged in to initiate payment.");
+			return null;
 		}
 		return auth.getName();
 	}
 	
 	@Tool(description = "get all the orders that are avaiable to refund for the logged in user")
-	public List<Order> getAllOrder() throws Exception{
-		String username = getAuthenticatedUsername();
-		return orderService.getAllRefundableOrders(username);
+	public List<Order> getAllOrder() {
+		try {
+			String username = getAuthenticatedUsername();
+			if (username == null) return List.of();
+			return orderService.getAllRefundableOrders(username);
+		} catch (Exception e) {
+			return List.of();
+		}
 	}
 	
 	@Tool(description = "get top 10 delivered orders of the current user")
-	public List<Order> getTop10Order() throws Exception{
-		String username = getAuthenticatedUsername();
-		return orderService.getTop10DeliveredOrders(username);
+	public List<Order> getTop10Order() {
+		try {
+			String username = getAuthenticatedUsername();
+			if (username == null) return List.of();
+			return orderService.getTop10DeliveredOrders(username);
+		} catch (Exception e) {
+			return List.of();
+		}
 	}
 	
 }
