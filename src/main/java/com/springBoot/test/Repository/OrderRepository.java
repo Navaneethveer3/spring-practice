@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.springBoot.test.Model.DeliveryStatus;
 import com.springBoot.test.Model.Order;
+import com.springBoot.test.Model.Status;
 import com.springBoot.test.Model.Users;
 
 @Repository
@@ -20,5 +21,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
 	Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
 	
-	Optional<List<Order>> findByDeliverystatusAndUsername(DeliveryStatus status, String username);
+	Optional<List<Order>> findByDeliverystatusAndUserAndStatus(Status status, DeliveryStatus deliveryStatus, Users user);
+	
+	Optional<List<Order>> findTop10ByDeliverystatusAndUser(DeliveryStatus deliveryStatus, Users user);
 }

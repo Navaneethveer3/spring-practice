@@ -16,6 +16,7 @@ import com.springBoot.test.Model.Status;
 import com.springBoot.test.Model.Users;
 import com.springBoot.test.Repository.OrderRepository;
 import com.springBoot.test.Repository.ProductRepository;
+import com.springBoot.test.Repository.UserRepo;
 
 import jakarta.transaction.Transactional;
 
@@ -26,6 +27,8 @@ public class OrderService {
 	@Autowired
 	private OrderRepository orderRepo;
 	
+	@Autowired
+	private UserRepo userRepo;
 	
 	@Autowired
 	private KafkaTemplate<String, InventoryDTO> kafka;
@@ -69,7 +72,20 @@ public class OrderService {
 	}
 	
 	public List<Order> getAllRefundableOrders(String username) throws Exception{
-		Optional<List<Order>> orders = orderRepo.findByDeliverystatusAndUsername(DeliveryStatus.Created, username);
+		Users user = userRepo.findByUsername(username);
+		if(user==null) {
+			throw new Exception("User not authenticated");
+		}
+		Optional<List<Order>> orders = orderRepo.findByDeliverystatusAndUserAndStatus(Status.PAID, DeliveryStatus.Created, user);
+		return orders.get();
+	}
+	
+	public List<Order> getTop10DeliveredOrders(String username) throws Exception{
+		Users user = userRepo.findByUsername(username);
+		if(user==null) {
+			throw new Exception("User not authenticated");
+		}
+		Optional<List<Order>> orders = orderRepo.findTop10ByDeliverystatusAndUser(DeliveryStatus.Delivered, user);
 		return orders.get();
 	}
 	

@@ -31,4 +31,10 @@ public class OrderTools {
 		return orderService.getAllRefundableOrders(username);
 	}
 	
+	@Tool(description = "get top 10 delivered orders of the current user")
+	public List<Order> getTop10Order() throws Exception{
+		String username = getAuthenticatedUsername();
+		return orderService.getTop10DeliveredOrders(username);
+	}
+	
 }

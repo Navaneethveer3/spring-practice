@@ -63,7 +63,8 @@ public class AiService {
 				"Use the knowledge base to answer questions about products, prices, availability, and recommendations accurately.";
 		}
 		
-		systemContext += "\n you have tool access, never execute the tools until you have enough details that are required for the tool execution";
+		systemContext += "\n you have tool access, never execute the tools until you have enough details that are required for the tool execution"
+				+ "you need to assist the customers in a very simple way, like the conversations should be very clear and concise but everything should covered that is asked by user in a simple manner";
 
 		return this.chatClient
 				.prompt()
