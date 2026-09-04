@@ -17,6 +17,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.springBoot.test.Tools.OrderTools;
 import com.springBoot.test.Tools.PaymentTools;
 import com.springBoot.test.Tools.ProductTools;
 
@@ -42,7 +43,7 @@ public class AiConfig {
 
 	@Bean
 	public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory, VectorStore vectorStore, QueryTransformer queryTransformer,
-								ProductTools prodTools, PaymentTools paymentTools) {
+								ProductTools prodTools, PaymentTools paymentTools, OrderTools orderTools) {
 
 		
 		Advisor ragAdvisor = RetrievalAugmentationAdvisor.builder()
@@ -57,7 +58,7 @@ public class AiConfig {
 		List<String> guardrails = List.of("password");
 		
 		return builder
-				.defaultTools(prodTools, paymentTools)
+				.defaultTools(prodTools, paymentTools, orderTools)
 				.defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(), ragAdvisor, new SafeGuardAdvisor(guardrails))
 				.build();
 	}

@@ -30,6 +30,9 @@ public class Order {
 	@Enumerated(EnumType.STRING)
 	private Status status;
 	
+	@Enumerated(EnumType.STRING)
+	private DeliveryStatus delivery;
+	
 	private String razorpayOrderId;
 	private String razorpayPaymentId;
 	private String razorpaySignature;
@@ -112,5 +115,15 @@ public class Order {
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
+
+	public DeliveryStatus getDelivery() {
+		return delivery;
+	}
+
+	public void setDelivery(DeliveryStatus delivery) {
+		this.delivery = delivery;
+	}
+	
+	
 	
 }

@@ -17,6 +17,7 @@ import com.razorpay.Refund;
 import com.razorpay.Utils;
 import com.springBoot.test.DTO.InventoryDTO;
 import com.springBoot.test.Model.CartItem;
+import com.springBoot.test.Model.DeliveryStatus;
 import com.springBoot.test.Model.Order;
 import com.springBoot.test.Model.OrderItem;
 import com.springBoot.test.Model.Product;
@@ -85,6 +86,7 @@ public class PaymentService {
 		order.setUser(user);
 		order.setPrice((int) cartValue);
 		order.setStatus(Status.PENDING);
+		order.setDelivery(DeliveryStatus.Created);
 		order.setRazorpayOrderId(razorpayOrder.get("id"));
 		for (CartItem item : cart) {
 			OrderItem orderItem = new OrderItem();
@@ -140,6 +142,7 @@ public class PaymentService {
 			return orderRepo.save(pendingOrder);
 		} else {
 			pendingOrder.setStatus(Status.FAILED);
+			pendingOrder.setDelivery(DeliveryStatus.Cancelled);
 			orderRepo.save(pendingOrder);
 			throw new Exception("Payment verification failed");
 		}
@@ -168,6 +171,7 @@ public class PaymentService {
 		order.setUser(user);
 		order.setPrice((int) orderValue);
 		order.setStatus(Status.PENDING);
+		order.setDelivery(DeliveryStatus.Created);
 		order.setRazorpayOrderId(razorpayOrder.get("id"));
 		OrderItem item = new OrderItem();
 		item.setOrder(order);
@@ -228,6 +232,7 @@ public class PaymentService {
 		}
 		refundKafka.send("cancel-order", dtoList);
 		order.setStatus(Status.REFUNDED);
+		order.setDelivery(DeliveryStatus.Cancelled);
 		orderRepo.save(order);
 		
 		Map<String, Object> response = new HashMap<>();

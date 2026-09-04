@@ -1,12 +1,14 @@
 package com.springBoot.test.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import com.springBoot.test.DTO.InventoryDTO;
+import com.springBoot.test.Model.DeliveryStatus;
 import com.springBoot.test.Model.Order;
 import com.springBoot.test.Model.OrderItem;
 import com.springBoot.test.Model.Product;
@@ -64,6 +66,11 @@ public class OrderService {
 	
 	public List<Order> getAllOrders(){
 		return orderRepo.findAll();
+	}
+	
+	public List<Order> getAllRefundableOrders(String username) throws Exception{
+		Optional<List<Order>> orders = orderRepo.findByDeliverystatusAndUsername(DeliveryStatus.Created, username);
+		return orders.get();
 	}
 	
 }

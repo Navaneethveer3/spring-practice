@@ -1,5 +1,6 @@
 package com.springBoot.test.Repository;
 
+
 import java.util.List;
 import java.util.Optional;
 
@@ -7,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import com.springBoot.test.Model.DeliveryStatus;
 import com.springBoot.test.Model.Order;
 import com.springBoot.test.Model.Users;
 
@@ -17,4 +19,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 	List<Order> findByUser(Users user);
 
 	Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
+	
+	Optional<List<Order>> findByDeliverystatusAndUsername(DeliveryStatus status, String username);
 }
