@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import com.springBoot.test.Model.Order;
 import com.springBoot.test.Model.UserPrincipal;
@@ -56,14 +57,29 @@ public class PaymentController {
 		}
 	}
 	
-	@PostMapping("/create-order")
-	public ResponseEntity<?> placeOrder(@AuthenticationPrincipal UserPrincipal principal, @RequestParam int prodId, @RequestParam int quantity){
+	@PostMapping("/create-order/{prodId}")
+	public ResponseEntity<?> placeOrder(@AuthenticationPrincipal UserPrincipal principal, @PathVariable int prodId, @RequestParam int quantity){
 		if(principal==null) {
 			return new ResponseEntity<>("User not authorized", HttpStatus.UNAUTHORIZED);
 		}
 		try {
 			Map<String,String> payload = paymentService.placeOrder(principal.getUsername(), prodId, quantity);
 			return new ResponseEntity<>(payload, HttpStatus.OK);
+		}
+		catch(Exception e) {
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		}
+	}
+	
+	@PostMapping("/refund/{orderId}")
+	public ResponseEntity<?> refundOrder(@AuthenticationPrincipal UserPrincipal principal, @PathVariable int orderId){
+		if(principal==null) {
+			return new ResponseEntity<>("User not authenticated", HttpStatus.UNAUTHORIZED);
+		}
+		try {
+			String username = principal.getUsername();
+			Map<String, Object> object = paymentService.refund(orderId, username);
+			return new ResponseEntity<>(object, HttpStatus.OK);
 		}
 		catch(Exception e) {
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);

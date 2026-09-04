@@ -44,4 +44,21 @@ public class InventoryService {
 		prodRepo.save(prod);
 	}
 	
+	@KafkaListener(topics = "cancel-order", groupId = "payment-service")
+	public void cancelOrder(List<InventoryDTO> dtoList) throws Exception{
+		if(dtoList.isEmpty()) {
+			throw new Exception("Order is Empty");
+		}
+		for(InventoryDTO dto : dtoList) {
+			int id = dto.getId();
+			int quantity = dto.getQuantity();
+			Product product = prodRepo.findById(id).orElse(null);
+			if(product==null) {					
+				throw new Exception("Product not found");
+			}
+			product.setQuantity(product.getQuantity()+quantity);
+			prodRepo.save(product);
+		}
+	}
+	
 }
