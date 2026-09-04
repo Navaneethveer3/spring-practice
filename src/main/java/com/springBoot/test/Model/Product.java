@@ -30,6 +30,10 @@ public class Product implements Serializable {
 	private String imageType;
 	private Integer quantity;
 	
+	@com.fasterxml.jackson.annotation.JsonManagedReference
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "product", fetch = FetchType.EAGER)
+	private List<PaymentOptions> payments;
+	
 	@JsonIgnore
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "product", fetch = FetchType.LAZY)
 	private List<OrderItem> item;
@@ -128,6 +132,14 @@ public class Product implements Serializable {
 	}
 	public void setVersion(UUID version) {
 		this.version = version;
+	}
+
+	public List<PaymentOptions> getPayments() {
+		return payments;
+	}
+
+	public void setPayments(List<PaymentOptions> payments) {
+		this.payments = payments;
 	}
 	
 	

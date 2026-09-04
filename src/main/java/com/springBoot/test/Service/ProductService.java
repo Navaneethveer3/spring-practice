@@ -52,19 +52,34 @@ public class ProductService {
 			prod.setImageData(imageFile.getBytes());
 		}
 		
+		if (prod.getPayments() != null) {
+			prod.getPayments().forEach(payment -> payment.setProduct(prod));
+		}
+		
 		Product saved = repo.save(prod);
 		
 		try {
+			StringBuilder paymentText = new StringBuilder();
+			if (saved.getPayments() != null && !saved.getPayments().isEmpty()) {
+				paymentText.append("\nPayment Options & Offers:\n");
+				for (PaymentOptions opt : saved.getPayments()) {
+					if (opt.getEMI() != null) paymentText.append(" - EMI Options: ").append(opt.getEMI()).append("\n");
+					if (opt.getDebit() != null) paymentText.append(" - Debit Card Offers: ").append(opt.getDebit()).append("\n");
+					if (opt.getCredit() != null) paymentText.append(" - Credit Card Offers: ").append(opt.getCredit()).append("\n");
+				}
+			}
+
 			String prodDetails = """
-					product details :
-						id : %s
-						name : %s,
-						price : %s,
-						description : %s,
-						brand : %s
-					""".formatted(saved.getId(), saved.getName(), saved.getPrice(), saved.getDescription(), saved.getBrand());
+					Product Details:
+					ID: %s
+					Name: %s
+					Price: %s
+					Brand: %s
+					Description: %s
+					%s
+					""".formatted(saved.getId(), saved.getName(), saved.getPrice(), saved.getBrand(), saved.getDescription(), paymentText.toString());
 			
-			Document document = new Document(prodDetails);
+			Document document = new Document(prodDetails, Map.of("productId", saved.getId()));
 			vectorStore.add(List.of(document));
 		} catch (Exception e) {
 			System.err.println("Warning: VectorStore indexing skipped for product " + saved.getId() + ": " + e.getMessage());
