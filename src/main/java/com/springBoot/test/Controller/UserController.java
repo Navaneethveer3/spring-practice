@@ -50,7 +50,7 @@ public class UserController {
 			return new ResponseEntity<>(u, HttpStatus.OK);
 		}
 		catch(Exception e) {
-			return new ResponseEntity<>(e.getMessage(),HttpStatus.ALREADY_REPORTED);
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 	}
 	

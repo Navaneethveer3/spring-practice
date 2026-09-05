@@ -50,8 +50,8 @@ public class AiConfig {
 		Advisor ragAdvisor = RetrievalAugmentationAdvisor.builder()
 //									.queryTransformers(queryTransformer)
 									.documentRetriever(VectorStoreDocumentRetriever.builder()
-											.similarityThreshold(0.75)
-											.topK(3)
+											.similarityThreshold(0.50)
+											.topK(5)
 											.vectorStore(vectorStore)
 											.build())
 									.build();
@@ -60,7 +60,7 @@ public class AiConfig {
 		
 		return builder
 				.defaultTools(prodTools, paymentTools, orderTools, kbTools)
-				.defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(), new SafeGuardAdvisor(guardrails))
+				.defaultAdvisors(ragAdvisor, MessageChatMemoryAdvisor.builder(chatMemory).build(), new SafeGuardAdvisor(guardrails))
 				.build();
 	}
 

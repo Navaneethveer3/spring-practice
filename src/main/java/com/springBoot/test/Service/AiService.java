@@ -1,11 +1,15 @@
 package com.springBoot.test.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.springBoot.test.Model.PaymentOptions;
 import com.springBoot.test.Model.Product;
 import com.springBoot.test.Model.UserPrincipal;
 
@@ -35,15 +39,40 @@ public class AiService {
 		if (productId != null) {
 			Product product = productService.getProductById(productId);
 			if (product != null) {
+				String creditOffers = "None";
+				String debitOffers = "None";
+				String emiOffers = "None";
+
+				if (product.getPayments() != null && !product.getPayments().isEmpty()) {
+					List<String> creditList = new ArrayList<>();
+					List<String> debitList = new ArrayList<>();
+					List<String> emiList = new ArrayList<>();
+
+					for (PaymentOptions opt : product.getPayments()) {
+						if (opt.getCredit() != null && !opt.getCredit().isBlank()) creditList.add(opt.getCredit());
+						if (opt.getDebit() != null && !opt.getDebit().isBlank()) debitList.add(opt.getDebit());
+						if (opt.getEMI() != null && !opt.getEMI().isBlank()) emiList.add(opt.getEMI());
+					}
+
+					if (!creditList.isEmpty()) creditOffers = String.join("; ", creditList);
+					if (!debitList.isEmpty()) debitOffers = String.join("; ", debitList);
+					if (!emiList.isEmpty()) emiOffers = String.join("; ", emiList);
+				}
+
 				systemContext = String.format(
 					"You are a helpful shopping assistant. " +
 					"The user is currently viewing the following product:\n" +
 					"  - ID: %d\n" +
 					"  - Name: %s\n" +
 					"  - Brand: %s\n" +
-					"  - Price: $%s\n" +
+					"  - Price: %s .rs\n" +
 					"  - Description: %s\n" +
-					"  - Stock: %s units available\n\n" +
+					"  - Stock: %s units available\n"
+					+ "- offers :\n"
+					+ "credit card : %s\n"
+					+ "debit card : %s\n"
+					+ "emi : %s\n"
+					+ "\n" +
 					"Use these details to answer the user's question accurately. " +
 					"Also leverage the knowledge base for any additional context.",
 					product.getId(),
@@ -51,7 +80,10 @@ public class AiService {
 					product.getBrand() != null ? product.getBrand() : "N/A",
 					product.getPrice(),
 					product.getDescription() != null ? product.getDescription() : "No description available",
-					product.getQuantity() != null ? product.getQuantity() : 0
+					product.getQuantity() != null ? product.getQuantity() : 0,
+					creditOffers,
+					debitOffers,
+					emiOffers
 				);
 			} else {
 				systemContext = "You are a helpful shopping assistant. " +
@@ -78,7 +110,10 @@ public class AiService {
 				  "Okay, time to place this order!", "Let's see what tools we've got", "I will call createPayment".
 				- Never discuss tool names, parameters, backend logic, or planning steps.
 				- Before invoking a tool, make sure all required parameters are available.
-				- If required information is missing, ask the user directly and concisely.
+				- When the user asks for product suggestions, recommendations, or searches by budget/specifications (e.g. "My budget is 35000, suggest me best mobile"):
+				  1. Use `searchKnowledgeBase` or `searchProduct` to fetch matching products from the catalog.
+				  2. Answer using the retrieved products, mentioning the product name, price in ₹, brand, and key features.
+				  3. Never say products are unavailable without executing a search first.
 
 				PAYMENT & ORDER CREATION:
 				- When the user asks to place an order or pay for cart items, invoke createPayment.
@@ -108,7 +143,13 @@ public class AiService {
 				  backend implementation, or tool execution details.
 				- Respond only with customer-facing information.
 				- Keep responses concise, helpful, and clear.
-
+				
+				RULES:
+				- Never reveal internal reasoning, chain-of-thought, planning, tool selection,
+				  backend implementation, or tool execution details.
+				- Even if you want confirmation to proceed with an action, just ask like "can I proceed?" but never show the backend tools, logic, reasoning to the user.
+				- Execute tools silently in the background. Never mention tool names, parameters, or internal execution details to the user.
+				- Never generate own responses.
 				""";
 
 		String content = this.chatClient

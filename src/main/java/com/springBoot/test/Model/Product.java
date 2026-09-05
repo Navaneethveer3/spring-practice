@@ -136,17 +136,36 @@ public class Product implements Serializable {
 		if (this.payments == null) {
 			return new java.util.ArrayList<>();
 		}
+		if (this.payments instanceof org.hibernate.collection.spi.PersistentCollection pc && !pc.wasInitialized()) {
+			return new java.util.ArrayList<>();
+		}
 		try {
-			// Trigger initialization check safely
-			this.payments.size();
-			return this.payments;
-		} catch (org.hibernate.LazyInitializationException e) {
-			return java.util.Collections.emptyList();
+			return new java.util.ArrayList<>(this.payments);
+		} catch (Exception e) {
+			return new java.util.ArrayList<>();
 		}
 	}
 
 	public void setPayments(List<PaymentOptions> payments) {
-		this.payments = payments;
+		if (payments == null) {
+			this.payments = new java.util.ArrayList<>();
+		} else {
+			this.payments = new java.util.ArrayList<>(payments);
+		}
+	}
+
+	public void updatePayments(List<PaymentOptions> newPayments) {
+		if (this.payments == null) {
+			this.payments = new java.util.ArrayList<>();
+		} else {
+			this.payments.clear();
+		}
+		if (newPayments != null) {
+			for (PaymentOptions p : newPayments) {
+				p.setProduct(this);
+				this.payments.add(p);
+			}
+		}
 	}
 	
 	

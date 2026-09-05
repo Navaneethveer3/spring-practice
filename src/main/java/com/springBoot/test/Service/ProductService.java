@@ -89,7 +89,7 @@ public class ProductService {
 	}
 	
 	@Transactional
-	@CachePut(key = "#prod.id", value = "products")
+	@CacheEvict(key = "#prod.id", value = "products")
 	public Product updateProduct(Product prod, MultipartFile image) throws Exception {
 		try {
 			Product curProd = repo.findById(prod.getId()).orElse(null);
@@ -97,13 +97,12 @@ public class ProductService {
 				throw new Exception("Product doesn't exist");
 			}
 			if (image != null && !image.isEmpty()) {
-				if(image!=null && image.getSize()>MAX_FILE_SIZE) {
+				if(image.getSize()>MAX_FILE_SIZE) {
 					throw new RuntimeException("Image should be within 200KB");
 				}
 				curProd.setImageName(image.getOriginalFilename());
 				curProd.setImageType(image.getContentType());
 				curProd.setImageData(image.getBytes());
-				
 			}
 			if(prod.getName()!=null) {
 				curProd.setName(prod.getName());
@@ -123,9 +122,42 @@ public class ProductService {
 			if(prod.getLaunchDate()!=null) {
 				curProd.setLaunchDate(prod.getLaunchDate());
 			}
-			return repo.save(curProd);
+			if(prod.getPayments()!=null) {
+				curProd.updatePayments(prod.getPayments());
+			}
+			Product saved = repo.save(curProd);
+
+			try {
+				StringBuilder paymentText = new StringBuilder();
+				if (saved.getPayments() != null && !saved.getPayments().isEmpty()) {
+					paymentText.append("\nPayment Options & Offers:\n");
+					for (PaymentOptions opt : saved.getPayments()) {
+						if (opt.getEMI() != null) paymentText.append(" - EMI Options: ").append(opt.getEMI()).append("\n");
+						if (opt.getDebit() != null) paymentText.append(" - Debit Card Offers: ").append(opt.getDebit()).append("\n");
+						if (opt.getCredit() != null) paymentText.append(" - Credit Card Offers: ").append(opt.getCredit()).append("\n");
+					}
+				}
+
+				String prodDetails = """
+						Product Details:
+						ID: %s
+						Name: %s
+						Price: %s
+						Brand: %s
+						Description: %s
+						%s
+						""".formatted(saved.getId(), saved.getName(), saved.getPrice(), saved.getBrand(), saved.getDescription(), paymentText.toString());
+				
+				Document document = new Document(prodDetails, Map.of("productId", saved.getId()));
+				vectorStore.add(List.of(document));
+			} catch (Exception ex) {
+				System.err.println("Warning: VectorStore indexing skipped for product update " + saved.getId() + ": " + ex.getMessage());
+			}
+
+			return saved;
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 	}

@@ -17,12 +17,12 @@ public class KnowledgeBaseTools {
 	@Autowired
     private VectorStore vectorStore;
 
-    @Tool(description = "Search the knowledge base for informative queries. Always use this when the user asks questions about a product or questiorns related to products.")
+    @Tool(description = "Search the product catalog and knowledge base using semantic vector search. Use this whenever the user asks for product recommendations, specifications, comparisons, or searches by budget or features (e.g. 'best mobile under 35000').")
     public String searchKnowledgeBase(
-            @ToolParam(description = "The specific search query or topic to look up (e.g. 'Spring Boot questions', 'HR policy')") String query,
-            @ToolParam(description = "the maximum number of results to return, e.g. 5, 10. Default is 3", required = false) Integer maxResults) {
+            @ToolParam(description = "The specific product search query or recommendation criteria (e.g. 'best mobile under 35000', 'Apple iPhone')") String query,
+            @ToolParam(description = "the maximum number of results to return, e.g. 3, 5. Default is 5", required = false) Integer maxResults) {
         try {
-            int topK = (maxResults != null && maxResults > 0) ? maxResults : 1;
+            int topK = (maxResults != null && maxResults > 0) ? maxResults : 5;
 
             List<Document> results = vectorStore.similaritySearch(
                 SearchRequest.builder()

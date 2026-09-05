@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.springBoot.test.Model.Profile;
@@ -43,17 +44,21 @@ public class UserService {
 	@Autowired
 	JWTService jwt;
 	
+	@Transactional
 	public Users register(Users user) throws Exception {
 		if(repo.findByUsername(user.getUsername())!=null) {
 			throw new Exception("Username already exists");
 		}
 		user.setPassword(passwordEncoder.encode(user.getPassword()));
 		user.setRole("USER");
+		Users savedUser = repo.save(user);
+
 		Profile profile = new Profile();
-		profile.setUsername(user.getUsername());
-		profile.setUser(user);
+		profile.setUsername(savedUser.getUsername());
+		profile.setUser(savedUser);
 		profileRepo.save(profile);
-		return repo.save(user);
+
+		return savedUser;
 	}
 	
 	@CacheEvict(key = "#username", value = "users")
