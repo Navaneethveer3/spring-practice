@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { streamChat } from '../services/api';
+import { streamChat, verifyPayment, getPaymentKey, cancelOrder, refundOrder } from '../services/api';
 
 // ─── Code Block Component with Copy to Clipboard ─────────────────────────────
 function CodeBlock({ node, inline, className, children, ...props }) {
@@ -79,96 +79,327 @@ const markdownComponents = {
   hr: ({ node, ...props }) => <hr className="chat-hr" {...props} />,
 };
 
-// ─── Interactive Refundable Order Cards ──────────────────────────────────────
-function RefundableOrderCards({ orders, onSelect }) {
+// ─── Interactive Refundable/Cancellable Order Cards ─────────────────────────
+function RefundableOrderCards({ orders, onCancelOrder, cancellingOrderId, cancelledOrderIds }) {
+  if (!orders || orders.length === 0) return null;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '0.5rem' }}>
-      {orders.map((order) => (
-        <div
-          key={order.id}
-          style={{
-            background: 'rgba(99,102,241,0.08)',
-            border: '1px solid rgba(99,102,241,0.25)',
-            borderRadius: '10px',
-            padding: '0.75rem 1rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.3rem',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                📦 Order #{order.id}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                {order.item?.map((i) => i.product?.name || 'Item').join(', ')}
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
-                {order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
-              </div>
-            </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontWeight: 800, color: 'var(--primary-color)', fontSize: '0.95rem' }}>
-                ₹{order.price?.toLocaleString('en-IN')}
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#4ade80', marginTop: '0.1rem' }}>✅ PAID</div>
-            </div>
-          </div>
-          <button
-            onClick={() => onSelect(order.id)}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginTop: '0.65rem' }}>
+      {orders.map((order) => {
+        const isCancelledOrRefunded = cancelledOrderIds?.has(order.id) || order.status === 'REFUNDED' || order.status === 'CANCELLED';
+        const isCancelling = cancellingOrderId === order.id;
+        const isPaid = order.status === 'PAID';
+        const displayStatus = isCancelledOrRefunded
+          ? (isPaid ? 'REFUNDED' : 'CANCELLED')
+          : (order.status || 'PENDING');
+
+        const itemSummary = Array.isArray(order.item) && order.item.length > 0
+          ? order.item.map((i) => (i.product?.name || 'Item') + (i.quantity > 1 ? ` (x${i.quantity})` : '')).join(', ')
+          : (order.items || `Order #${order.id}`);
+
+        const priceNum = Number(order.price) || 0;
+
+        return (
+          <div
+            key={order.id}
             style={{
-              marginTop: '0.35rem',
-              padding: '0.45rem 0.75rem',
-              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-              border: 'none',
-              borderRadius: '7px',
-              color: '#fff',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'opacity 0.15s',
+              background: isCancelledOrRefunded ? 'rgba(100,116,139,0.08)' : 'rgba(99,102,241,0.08)',
+              border: `1px solid ${isCancelledOrRefunded ? 'rgba(100,116,139,0.25)' : 'rgba(99,102,241,0.28)'}`,
+              borderRadius: '11px',
+              padding: '0.8rem 1rem',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.4rem',
+              flexDirection: 'column',
+              gap: '0.35rem',
+              transition: 'all 0.2s ease',
             }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
-            ↩️ Cancel & Refund This Order
-          </button>
-        </div>
-      ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>📦</span>
+                  <span>Order #{order.id}</span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: '1.25' }}>
+                  {itemSummary}
+                </div>
+                {order.createdAt && (
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                    {new Date(order.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </div>
+                )}
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontWeight: 800, color: isCancelledOrRefunded ? 'var(--text-muted)' : 'var(--primary-color)', fontSize: '0.98rem' }}>
+                  ₹{priceNum.toLocaleString('en-IN')}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    marginTop: '0.2rem',
+                    color: isCancelledOrRefunded
+                      ? '#a78bfa'
+                      : isPaid
+                        ? '#4ade80'
+                        : '#f59e0b',
+                  }}
+                >
+                  {isCancelledOrRefunded ? '↩️ ' + displayStatus : isPaid ? '✅ PAID' : '⏳ PENDING'}
+                </div>
+              </div>
+            </div>
+
+            {!isCancelledOrRefunded ? (
+              <button
+                onClick={() => onCancelOrder && onCancelOrder(order.id, order.status)}
+                disabled={isCancelling}
+                style={{
+                  marginTop: '0.4rem',
+                  padding: '0.5rem 0.85rem',
+                  background: isPaid
+                    ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                    : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  border: 'none',
+                  borderRadius: '7px',
+                  color: '#fff',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: isCancelling ? 'wait' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  transition: 'opacity 0.15s, transform 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
+                <span>{isCancelling ? '⏳' : isPaid ? '↩️' : '🚫'}</span>
+                <span>
+                  {isCancelling
+                    ? 'Processing...'
+                    : isPaid
+                      ? 'Tap to Cancel & Refund Order'
+                      : 'Tap to Cancel Order'}
+                </span>
+              </button>
+            ) : (
+              <div style={{ marginTop: '0.3rem', fontSize: '0.78rem', color: '#a78bfa', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <span>✅</span>
+                <span>Order cancelled and refund processed.</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-// ─── Parse refundable orders from AI message content ─────────────────────────
-// The LLM returns a list of Order objects from the tool call. We look for a
-// JSON array embedded in the message where each element has an `id` field and
-// `status === "PAID"` to detect that this is a refundable-orders response.
+// ─── Parse refundable/cancellable orders from AI message content ─────────────
 function extractRefundableOrders(content) {
-  try {
-    // Try to find a JSON array anywhere in the content
-    const jsonMatch = content.match(/\[[\s\S]*?\]/);
-    if (!jsonMatch) return null;
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (!Array.isArray(parsed) || parsed.length === 0) return null;
-    // Validate it looks like order objects with id and status PAID
-    const isOrders = parsed.every(o => o.id && (o.status === 'PAID' || o.razorpayOrderId));
-    return isOrders ? parsed : null;
-  } catch {
-    return null;
+  if (!content) return null;
+
+  // 1. Try to find a fenced ```orders ... ``` or ```json ... ``` block
+  const ordersBlockMatch = content.match(/```(?:orders|json)?\s*(\[[\s\S]*?\])\s*```/i);
+  if (ordersBlockMatch) {
+    try {
+      const parsed = JSON.parse(ordersBlockMatch[1]);
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].id) {
+        return parsed;
+      }
+    } catch (e) {}
   }
+
+  // 2. Try to find any raw JSON array where items have an id
+  try {
+    const jsonMatch = content.match(/\[\s*\{[\s\S]*?"id"\s*:[\s\S]*?\}\s*\]/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].id) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+
+  // 3. Markdown Table rows: | Order ID | Items | Price | Status |
+  const tableRows = [...content.matchAll(/\|\s*(?:#|Order\s*ID:?\s*)?(\d+)\s*\|\s*([^|]+)\|\s*(?:₹|INR|\$)?\s*([0-9,]+(?:\.[0-9]+)?)\s*\|\s*([^|]+)\|/gi)];
+  if (tableRows.length > 0) {
+    const parsedOrders = tableRows.map(r => ({
+      id: parseInt(r[1], 10),
+      items: r[2].trim() || `Order #${r[1]}`,
+      price: parseFloat(r[3].replace(/,/g, '')) || 0,
+      status: /PAID/i.test(r[4]) ? 'PAID' : (/CANCELLED/i.test(r[4]) ? 'CANCELLED' : (/REFUNDED/i.test(r[4]) ? 'REFUNDED' : 'PENDING')),
+    }));
+    if (parsedOrders.length > 0) return parsedOrders;
+  }
+
+  // 4. Fallback: Parse from text / list mentions (e.g. "Order #4: ₹143,800", "Order ID: 4", or numbered list)
+  const orderRegex = /(?:Order\s*(?:#|ID:?\s*)|#)(\d+)([\s\S]*?)(?=(?:Order\s*(?:#|ID:?\s*)|#\d+|$))/gi;
+  const sections = [...content.matchAll(orderRegex)];
+  if (sections.length > 0) {
+    const parsedOrders = [];
+    for (const sec of sections) {
+      const id = parseInt(sec[1], 10);
+      if (isNaN(id) || id <= 0) continue;
+      const text = sec[2];
+      const priceMatch = text.match(/(?:₹|INR|\$|Total:?\s*|Price:?\s*)\s*([0-9,]+(?:\.[0-9]+)?)/i);
+      const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : 0;
+      const isPaid = /\bPAID\b/i.test(text);
+      const isCancelled = /\bCANCELLED\b/i.test(text);
+      const isRefunded = /\bREFUNDED\b/i.test(text);
+      const status = isRefunded ? 'REFUNDED' : isCancelled ? 'CANCELLED' : isPaid ? 'PAID' : 'PENDING';
+      const itemsMatch = text.match(/(?:Items?|Products?):\s*([^\n\r]+)/i);
+      const items = itemsMatch ? itemsMatch[1].trim() : `Order #${id}`;
+      if (price > 0 || isPaid || isCancelled || isRefunded || itemsMatch) {
+        parsedOrders.push({ id, price, status, items });
+      }
+    }
+    const unique = Array.from(new Map(parsedOrders.map(o => [o.id, o])).values());
+    if (unique.length > 0) return unique;
+  }
+
+  return null;
+}
+
+// ─── Parse payment order details from AI message content ─────────────────────
+function extractPaymentOrder(content) {
+  if (!content) return null;
+
+  // 1. Try to find a ```payment ... ``` block
+  const paymentBlockMatch = content.match(/```(?:payment|json)?\s*(\{[\s\S]*?"razorpayOrderId"[\s\S]*?\})\s*```/i);
+  if (paymentBlockMatch) {
+    try {
+      const parsed = JSON.parse(paymentBlockMatch[1]);
+      if (parsed.razorpayOrderId) return parsed;
+    } catch (e) {}
+  }
+
+  // 2. Try to find any raw JSON containing razorpayOrderId
+  const jsonMatch = content.match(/\{[\s\S]*?"razorpayOrderId"[\s\S]*?\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.razorpayOrderId) return parsed;
+    } catch (e) {}
+  }
+
+  // 3. Fallback: Parse from plain text regex if LLM formatted as text
+  const rzpMatch = content.match(/Razorpay Order ID:\s*([a-zA-Z0-9_]+)/i);
+  if (rzpMatch) {
+    const rzpOrderId = rzpMatch[1].trim();
+    const orderIdMatch = content.match(/Order ID:\s*(\d+)/i);
+    const amountMatch = content.match(/Amount:\s*(?:₹|INR)?\s*([0-9,]+(?:\.[0-9]+)?)/i);
+    let amountInPaise = 0;
+    if (amountMatch) {
+      const num = parseFloat(amountMatch[1].replace(/,/g, ''));
+      amountInPaise = Math.round(num * 100);
+    }
+    return {
+      razorpayOrderId: rzpOrderId,
+      orderId: orderIdMatch ? orderIdMatch[1] : null,
+      amount: amountInPaise,
+      currency: 'INR',
+    };
+  }
+
+  return null;
+}
+
+// ─── Interactive Payment Order Card ──────────────────────────────────────────
+function PaymentOrderCard({ payment, onPayNow, isPaid, isVerifying }) {
+  const amountFormatted = payment.amount
+    ? (payment.amount / 100).toLocaleString('en-IN', { style: 'currency', currency: payment.currency || 'INR' })
+    : '₹0';
+
+  return (
+    <div
+      style={{
+        background: 'linear-gradient(135deg, rgba(245,158,11,0.09), rgba(99,102,241,0.12))',
+        border: '1px solid rgba(245,158,11,0.35)',
+        borderRadius: '12px',
+        padding: '0.85rem 1rem',
+        marginTop: '0.65rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.45rem',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <span>💳</span>
+          <span>Payment Required {payment.orderId ? `(Order #${payment.orderId})` : ''}</span>
+        </div>
+        <span
+          style={{
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            padding: '2px 8px',
+            borderRadius: '999px',
+            background: isPaid ? 'rgba(74,222,128,0.2)' : 'rgba(245,158,11,0.2)',
+            color: isPaid ? '#4ade80' : '#f59e0b',
+            border: `1px solid ${isPaid ? 'rgba(74,222,128,0.4)' : 'rgba(245,158,11,0.4)'}`,
+          }}
+        >
+          {isPaid ? '✅ PAID' : isVerifying ? '⏳ VERIFYING...' : '⚡ PENDING'}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.1rem' }}>
+        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          Order: <code style={{ color: 'var(--text-secondary)' }}>{payment.razorpayOrderId}</code>
+        </div>
+        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f59e0b' }}>
+          {amountFormatted}
+        </div>
+      </div>
+
+      {!isPaid && (
+        <button
+          onClick={onPayNow}
+          disabled={isVerifying}
+          style={{
+            marginTop: '0.35rem',
+            padding: '0.55rem 1rem',
+            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#fff',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            cursor: isVerifying ? 'wait' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            boxShadow: '0 2px 8px rgba(245,158,11,0.3)',
+            transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        >
+          <span>🔒</span>
+          <span>{isVerifying ? 'Verifying Payment...' : 'Pay Now with Razorpay'}</span>
+        </button>
+      )}
+
+      {isPaid && (
+        <div style={{ fontSize: '0.8rem', color: '#4ade80', fontWeight: 600, textAlign: 'center', marginTop: '0.2rem' }}>
+          🎉 Order placed successfully!
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Single message bubble ────────────────────────────────────────────────────
-function ChatMessage({ msg, onRefundSelect }) {
+function ChatMessage({ msg, onCancelOrder, cancellingOrderId, cancelledOrderIds, onPayNow }) {
   const isUser = msg.role === 'user';
 
   // Check if this is a refundable-orders response from the AI
   const refundableOrders = !isUser && msg.refundableOrders ? msg.refundableOrders : null;
+  const paymentOrder = !isUser && msg.paymentOrder ? msg.paymentOrder : null;
 
   return (
     <div className={`chat-msg ${isUser ? 'chat-msg-user' : 'chat-msg-ai'}`}>
@@ -179,14 +410,27 @@ function ChatMessage({ msg, onRefundSelect }) {
         ) : (
           <div className="chat-markdown-body">
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {msg.content}
+              {msg.displayContent || msg.content}
             </ReactMarkdown>
+            {paymentOrder && (
+              <PaymentOrderCard
+                payment={paymentOrder}
+                onPayNow={() => onPayNow(paymentOrder, msg.id)}
+                isPaid={msg.isPaid}
+                isVerifying={msg.isVerifying}
+              />
+            )}
             {refundableOrders && refundableOrders.length > 0 && (
-              <RefundableOrderCards orders={refundableOrders} onSelect={onRefundSelect} />
+              <RefundableOrderCards
+                orders={refundableOrders}
+                onCancelOrder={onCancelOrder}
+                cancellingOrderId={cancellingOrderId}
+                cancelledOrderIds={cancelledOrderIds}
+              />
             )}
             {refundableOrders && refundableOrders.length === 0 && (
               <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                No eligible orders found for refund.
+                No active orders available for cancellation.
               </div>
             )}
           </div>
@@ -227,6 +471,8 @@ function ChatWidget({ productId }) {
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
+  const [cancelledOrderIds, setCancelledOrderIds] = useState(new Set());
   const streamRef = useRef(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -251,6 +497,134 @@ function ChatWidget({ productId }) {
     }]);
   }, [productId]);
 
+  // Direct touch handler to cancel or refund an order without typing to the LLM
+  const handleCancelOrder = useCallback(async (orderId, status) => {
+    if (cancellingOrderId) return;
+    setCancellingOrderId(orderId);
+    const isPaid = status === 'PAID';
+    try {
+      if (isPaid) {
+        await refundOrder(orderId);
+      } else {
+        await cancelOrder(orderId);
+      }
+
+      // 1. Mark as cancelled in local Set
+      setCancelledOrderIds(prev => new Set(prev).add(orderId));
+
+      // 2. Update existing messages so any card rendered in chat changes to CANCELLED/REFUNDED
+      setMessages(prev => prev.map(m => {
+        if (m.refundableOrders) {
+          return {
+            ...m,
+            refundableOrders: m.refundableOrders.map(o =>
+              o.id === orderId ? { ...o, status: isPaid ? 'REFUNDED' : 'CANCELLED' } : o
+            )
+          };
+        }
+        return m;
+      }));
+
+      // 3. Append AI confirmation message to chat
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: 'ai',
+          content: `✅ **Order #${orderId} has been successfully ${isPaid ? 'cancelled and refunded' : 'cancelled'}!**\n\nThe order status has been updated in your account.`,
+        }
+      ]);
+
+      // 4. Notify app (Orders page) to refresh
+      window.dispatchEvent(new CustomEvent('orders-updated', { detail: { orderId } }));
+    } catch (err) {
+      console.error('Failed to cancel order:', err);
+      const errMsg = err?.response?.data?.message || err?.response?.data || err.message || 'Failed to cancel order';
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: 'ai',
+          content: `⚠️ **Could not cancel Order #${orderId}**: ${typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg)}. Please try again or visit your Orders page.`,
+        }
+      ]);
+    } finally {
+      setCancellingOrderId(null);
+    }
+  }, [cancellingOrderId]);
+
+  // Called to open Razorpay modal and handle payment verification
+  const handleRazorpayPayment = useCallback(async (paymentOrder, msgId) => {
+    try {
+      let key = paymentOrder.keyId;
+      if (!key) {
+        try {
+          const keyRes = await getPaymentKey();
+          key = keyRes.data?.keyId;
+        } catch (e) {
+          console.error("Failed to fetch Razorpay key:", e);
+        }
+      }
+
+      if (!window.Razorpay) {
+        alert("Razorpay checkout SDK is not loaded. Please refresh the page.");
+        return;
+      }
+
+      const options = {
+        key: key,
+        amount: paymentOrder.amount,
+        currency: paymentOrder.currency || 'INR',
+        name: 'ShopAI',
+        description: `Order Payment ${paymentOrder.orderId ? '#' + paymentOrder.orderId : ''}`,
+        order_id: paymentOrder.razorpayOrderId,
+        theme: { color: '#f59e0b' },
+        handler: async (response) => {
+          if (msgId) {
+            setMessages(prev => prev.map(m => m.id === msgId ? { ...m, isVerifying: true } : m));
+          }
+          try {
+            await verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            if (msgId) {
+              setMessages(prev => prev.map(m => m.id === msgId ? { ...m, isPaid: true, isVerifying: false } : m));
+            }
+            setMessages(prev => [
+              ...prev,
+              {
+                id: Date.now(),
+                role: 'ai',
+                content: `🎉 **Payment Successful!**\n\nYour payment for **Order #${paymentOrder.orderId || ''}** has been confirmed (Payment ID: \`${response.razorpay_payment_id}\`). Your order is placed and being prepared!`,
+              },
+            ]);
+          } catch (err) {
+            if (msgId) {
+              setMessages(prev => prev.map(m => m.id === msgId ? { ...m, isVerifying: false } : m));
+            }
+            alert('Payment verification failed. Please contact support.');
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            console.log('Payment modal closed');
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (resp) => {
+        alert('Payment failed: ' + (resp.error?.description || 'Payment could not be completed.'));
+      });
+      rzp.open();
+    } catch (err) {
+      console.error('Error initiating Razorpay:', err);
+      alert('Could not start Razorpay checkout. Please try again.');
+    }
+  }, []);
+
   const sendMessage = useCallback((overrideText) => {
     const text = (overrideText || input).trim();
     if (!text || streaming) return;
@@ -272,20 +646,66 @@ function ChatWidget({ productId }) {
       },
       // onDone
       () => {
-        // After stream finishes, try to parse refundable orders out of the content
         const refundableOrders = extractRefundableOrders(accumulated);
+        const paymentOrder = extractPaymentOrder(accumulated);
+        const msgId = Date.now();
+
+        // If LLM message itself confirms an order cancellation, record it and update state
+        const cancelMatch = accumulated.match(/(?:order\s*#?|#)(\d+)[^.\n]*?(?:cancelled|refunded)/i) ||
+                            accumulated.match(/(?:cancelled|refunded)[^.\n]*?(?:order\s*#?|#)(\d+)/i);
+        if (cancelMatch) {
+          const cId = parseInt(cancelMatch[1], 10);
+          if (!isNaN(cId)) {
+            setCancelledOrderIds(prev => new Set(prev).add(cId));
+            setMessages(prev => prev.map(m => {
+              if (m.refundableOrders) {
+                return {
+                  ...m,
+                  refundableOrders: m.refundableOrders.map(o =>
+                    o.id === cId ? { ...o, status: o.status === 'PAID' ? 'REFUNDED' : 'CANCELLED' } : o
+                  )
+                };
+              }
+              return m;
+            }));
+            window.dispatchEvent(new CustomEvent('orders-updated', { detail: { orderId: cId } }));
+          }
+        }
+
+        // Clean content for display: hide raw JSON blocks and orders code blocks from chat text
+        let cleanContent = accumulated;
+        if (paymentOrder) {
+          cleanContent = cleanContent
+            .replace(/```(?:payment|json)?\s*\{[\s\S]*?"razorpayOrderId"[\s\S]*?\}\s*```/gi, '')
+            .trim();
+        }
+        if (refundableOrders) {
+          cleanContent = cleanContent
+            .replace(/```(?:orders|json)?\s*\[[\s\S]*?\]\s*```/gi, '')
+            .replace(/\[\s*\{[\s\S]*?"id"\s*:[\s\S]*?\}\s*\]/g, '')
+            .trim();
+        }
 
         setMessages(prev => [...prev, {
+          id: msgId,
           role: 'ai',
-          content: refundableOrders
-            // If we found order data embedded, strip the raw JSON from display
-            ? accumulated.replace(/\[[\s\S]*?\]/, '').trim() || "Here are your eligible orders for refund. Click one to cancel and refund:"
-            : accumulated,
+          content: accumulated,
+          displayContent: cleanContent || accumulated,
           refundableOrders: refundableOrders || undefined,
+          paymentOrder: paymentOrder || undefined,
+          isPaid: false,
+          isVerifying: false,
         }]);
         setStreamingText('');
         setStreaming(false);
         streamRef.current = null;
+
+        // Automatically trigger Razorpay checkout modal
+        if (paymentOrder && paymentOrder.razorpayOrderId) {
+          setTimeout(() => {
+            handleRazorpayPayment(paymentOrder, msgId);
+          }, 400);
+        }
       },
       // onError
       (err) => {
@@ -299,12 +719,7 @@ function ChatWidget({ productId }) {
         streamRef.current = null;
       }
     );
-  }, [input, productId, streaming]);
-
-  // Called when user clicks "Refund This Order" on a card
-  const handleRefundSelect = useCallback((orderId) => {
-    sendMessage(`Please cancel and refund order #${orderId}`);
-  }, [sendMessage]);
+  }, [input, productId, streaming, handleRazorpayPayment]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -391,7 +806,14 @@ function ChatWidget({ productId }) {
         {/* Messages */}
         <div className="chat-messages" id="chat-messages-list">
           {messages.map((msg, i) => (
-            <ChatMessage key={i} msg={msg} onRefundSelect={handleRefundSelect} />
+            <ChatMessage
+              key={msg.id || i}
+              msg={msg}
+              onCancelOrder={handleCancelOrder}
+              cancellingOrderId={cancellingOrderId}
+              cancelledOrderIds={cancelledOrderIds}
+              onPayNow={handleRazorpayPayment}
+            />
           ))}
 
           {/* Live streaming bubble */}

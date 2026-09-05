@@ -37,7 +37,7 @@ public class AiConfig {
 		return MessageWindowChatMemory
 				.builder()
 				.chatMemoryRepository(jodbcChatMemoryRepository)
-				.maxMessages(4) // Reduced from 10 to 4 to prevent heavy RAG tool results from bloating the context window
+				.maxMessages(10)
 				.build();
 	}
 

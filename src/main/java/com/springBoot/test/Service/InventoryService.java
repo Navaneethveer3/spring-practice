@@ -43,22 +43,41 @@ public class InventoryService {
 		prod.setQuantity(prod.getQuantity()+quantity);
 		prodRepo.save(prod);
 	}
-	
+	@Autowired(required = false)
+	private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
 	@KafkaListener(topics = "cancel-order", groupId = "payment-service")
-	public void cancelOrder(List<InventoryDTO> dtoList) throws Exception{
-		if(dtoList.isEmpty()) {
+	public void cancelOrder(Object payload) throws Exception {
+		if (payload instanceof org.apache.kafka.clients.consumer.ConsumerRecord<?, ?> record) {
+			payload = record.value();
+		}
+		if (payload == null) {
+			return;
+		}
+		List<?> list;
+		if (payload instanceof List<?> l) {
+			list = l;
+		} else {
+			list = List.of(payload);
+		}
+		if (list.isEmpty()) {
 			throw new Exception("Order is Empty");
 		}
-		for(InventoryDTO dto : dtoList) {
+		for (Object item : list) {
+			InventoryDTO dto;
+			if (item instanceof InventoryDTO inventoryDTO) {
+				dto = inventoryDTO;
+			} else {
+				dto = objectMapper.convertValue(item, InventoryDTO.class);
+			}
 			int id = dto.getId();
 			int quantity = dto.getQuantity();
 			Product product = prodRepo.findById(id).orElse(null);
-			if(product==null) {					
-				throw new Exception("Product not found");
+			if (product == null) {					
+				throw new Exception("Product not found with id: " + id);
 			}
-			product.setQuantity(product.getQuantity()+quantity);
+			product.setQuantity(product.getQuantity() + quantity);
 			prodRepo.save(product);
 		}
 	}
-	
 }

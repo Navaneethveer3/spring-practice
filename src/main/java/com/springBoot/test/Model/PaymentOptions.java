@@ -1,6 +1,6 @@
 package com.springBoot.test.Model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,7 +25,7 @@ public class PaymentOptions {
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "product_id")
-	@JsonBackReference
+	@JsonIgnore
 	private Product product;
 
 	public Integer getId() {

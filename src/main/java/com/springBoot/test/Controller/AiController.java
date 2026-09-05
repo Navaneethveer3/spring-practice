@@ -33,7 +33,7 @@ public class AiController {
 	 * as they arrive without waiting for the full response.
 	 */
 	@GetMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-	public Flux<String> chat(
+	public String chat(
 			@AuthenticationPrincipal UserPrincipal principal,
 			@RequestParam String prompt,
 			@RequestParam(required = false) Integer productId) {

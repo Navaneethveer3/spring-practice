@@ -75,6 +75,7 @@ export const cancelOrder = (orderId) => api.post(`/orders/${orderId}/cancel`);
 // ===== Payments API =====
 export const createPaymentOrder = () => api.post('/payments/create-order');
 export const verifyPayment = (paymentData) => api.post('/payments/verify', paymentData);
+export const getPaymentKey = () => api.get('/payments/key');
 // Direct product order (Buy Now from product page)
 export const placeDirectOrder = (prodId, quantity) => api.post(`/payments/create-order/${prodId}?quantity=${quantity}`);
 // Refund a paid order
@@ -99,41 +100,23 @@ export const streamChat = (prompt, productId, onChunk, onDone, onError) => {
   const params = new URLSearchParams({ prompt });
   if (productId != null) params.append('productId', productId);
 
-  // EventSource doesn't support custom headers natively, so we append token as a query param
-  // The backend security config must allow this via a query-parameter token filter.
-  // As a workaround we use fetch() with ReadableStream for proper auth header support.
   const controller = new AbortController();
 
   fetch(`${API_URL}/ai/chat?${params.toString()}`, {
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'text/event-stream',
+      'Authorization': `Bearer ${token}`
     },
     signal: controller.signal,
-  }).then(response => {
+  })
+  .then(response => {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    const read = () => {
-      reader.read().then(({ done, value }) => {
-        if (done) { onDone(); return; }
-        const text = decoder.decode(value, { stream: true });
-        // SSE format: lines starting with "data:"
-        const lines = text.split('\n');
-        lines.forEach(line => {
-          if (line.startsWith('data:')) {
-            const chunk = line.slice(5).trimStart();
-            if (chunk && chunk !== '[DONE]') onChunk(chunk);
-          }
-        });
-        read();
-      }).catch(err => {
-        if (err.name !== 'AbortError') onError(err);
-      });
-    };
-    read();
-  }).catch(err => {
+    return response.text();
+  })
+  .then(text => {
+    onChunk(text);
+    onDone();
+  })
+  .catch(err => {
     if (err.name !== 'AbortError') onError(err);
   });
 

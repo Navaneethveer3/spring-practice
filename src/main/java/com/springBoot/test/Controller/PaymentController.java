@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +28,13 @@ public class PaymentController {
 	@Autowired
 	private PaymentService paymentService;
 	
+	@GetMapping("/key")
+	public ResponseEntity<?> getPaymentKey(@AuthenticationPrincipal UserPrincipal principal) {
+		if (principal == null) {
+			return new ResponseEntity<>("User not authorized", HttpStatus.UNAUTHORIZED);
+		}
+		return ResponseEntity.ok(Map.of("keyId", paymentService.getApiKey()));
+	}
 	
 	@PostMapping("/create-order")
 	public ResponseEntity<?> createPaymentOrder(@AuthenticationPrincipal UserPrincipal principal){
@@ -82,6 +90,7 @@ public class PaymentController {
 			return new ResponseEntity<>(object, HttpStatus.OK);
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
 		}
 	}

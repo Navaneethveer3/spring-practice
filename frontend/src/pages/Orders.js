@@ -179,7 +179,14 @@ const Orders = () => {
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => {
+    fetchOrders();
+    const handleOrdersUpdated = () => {
+      fetchOrders();
+    };
+    window.addEventListener('orders-updated', handleOrdersUpdated);
+    return () => window.removeEventListener('orders-updated', handleOrdersUpdated);
+  }, []);
 
   const fetchOrders = async () => {
     try {

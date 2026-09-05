@@ -29,8 +29,6 @@ public class Product implements Serializable {
 	private String imageName;
 	private String imageType;
 	private Integer quantity;
-	
-	@com.fasterxml.jackson.annotation.JsonManagedReference
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "product", fetch = FetchType.EAGER)
 	private List<PaymentOptions> payments;
 	
@@ -135,7 +133,16 @@ public class Product implements Serializable {
 	}
 
 	public List<PaymentOptions> getPayments() {
-		return payments;
+		if (this.payments == null) {
+			return new java.util.ArrayList<>();
+		}
+		try {
+			// Trigger initialization check safely
+			this.payments.size();
+			return this.payments;
+		} catch (org.hibernate.LazyInitializationException e) {
+			return java.util.Collections.emptyList();
+		}
 	}
 
 	public void setPayments(List<PaymentOptions> payments) {

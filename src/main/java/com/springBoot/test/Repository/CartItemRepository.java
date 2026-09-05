@@ -15,7 +15,7 @@ public interface CartItemRepository extends JpaRepository<CartItem, Integer> {
 	
 	CartItem findByUserAndProduct(Users user, Product prod);
 	
-	@Query("SELECT DISTINCT c FROM CartItem c JOIN FETCH c.product WHERE c.user = :user")
+	@Query("SELECT DISTINCT c FROM CartItem c JOIN FETCH c.product LEFT JOIN FETCH c.product.payments WHERE c.user = :user")
 	List<CartItem> findByUser(Users user);
 	
 	void deleteAllByUser(Users user);

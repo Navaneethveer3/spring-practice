@@ -51,6 +51,7 @@ public class OrderService {
 				}
 			}
 			order.setStatus(Status.CANCELLED);
+			order.setDelivery(DeliveryStatus.Cancelled);
 			orderRepo.save(order);
 		}
 	}
@@ -77,7 +78,7 @@ public class OrderService {
 			throw new Exception("User not authenticated");
 		}
 		Optional<List<Order>> orders = orderRepo.findByStatusAndDeliveryAndUser(Status.PAID, DeliveryStatus.Created, user);
-		return orders.get();
+		return orders.orElse(List.of());
 	}
 	
 	public List<Order> getTop10DeliveredOrders(String username) throws Exception{
