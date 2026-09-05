@@ -1,282 +1,200 @@
-# 🛒 E-Commerce Microservices Application
+# 🛒 Agentic E-Commerce
 
-A scalable and performance-focused e-commerce application built using **Spring Boot** and a **microservices architecture**. The application provides secure user authentication, efficient product and order management, and an AI-powered conversational assistant for handling customer queries.
+An autonomous, agentic e-commerce platform built on **Spring Boot** with a microservices architecture. Beyond standard product/order management, the platform embeds a **tool-calling AI agent** that can understand natural language, retrieve product information via RAG, place orders and manage the cart on the user's behalf, and automate the entire Razorpay payment lifecycle — while explaining payment policies, EMI options, and cost breakdowns in plain language.
 
-The system is designed with **scalability, performance, security, and maintainability** in mind, using technologies such as **Spring Security, Spring AI, caching, database indexing, pagination, Docker, and Microsoft Azure**.
+The system is designed with **scalability, performance, security, and maintainability** in mind, using **Spring Security, Spring AI, Redis, Kafka, Docker, and Microsoft Azure SQL**.
 
 ## 🚀 Key Features
 
+### 🤖 Agentic AI Assistant
+
+- Conversational agent powered by **Spring AI** with **Tool Calling**, **RAG**, and **Generative AI**
+- Understands natural-language product queries and answers them using **RAG over the product catalog**
+- **Places orders and adds items to the cart on the user's behalf**, then redirects the user directly to the payment page
+- Automates the full payment lifecycle via tool calling: **createOrder()**, **verify()**, **refund()** against Razorpay
+- Explains **payment policies, EMI options, price breakdowns, discounts/offers, and applicable charges** in clear, simple language
+- Reduces support overhead by answering product and order questions conversationally, backed by real data
+
+### 💳 Razorpay Payment Integration
+
+- `createOrder()` — creates a Razorpay order for checkout
+- `verify()` — verifies payment signature/status after completion
+- `refund()` — handles refund requests
+- All three exposed as agent tools, so the AI can trigger payment actions directly during a conversation
+
 ### 🔐 Secure Authentication & Authorization
 
-- Implemented authentication and authorization using **Spring Security**
-- Protected APIs and resources using **role-based access control**
-- Securely manages user access to application functionality
-- Provides a security layer for protected REST APIs
+- Authentication and authorization via **Spring Security**
+- **Role-based access control** on protected endpoints
+- Secure handling of user resources and protected REST APIs
 
-### 🔄 Microservices Architecture
+### 🔄 Event-Driven Microservices Architecture
 
-- Designed the application using an **event-driven microservices architecture**
-- Decomposed business functionality into independently deployable services
-- Enables better scalability, maintainability, and fault isolation
-- Services communicate through asynchronous events where appropriate
-
-### 🤖 AI-Powered Customer Assistant
-
-- Integrated **Spring AI** to provide a conversational assistant
-- Allows customers to interact with the application using natural language
-- Helps answer product and customer-related queries
-- Improves the overall shopping experience through AI-powered interactions
+- Business functionality decomposed into independently deployable services
+- Services communicate asynchronously via **Kafka**
+- Improves scalability, maintainability, and fault isolation
 
 ### ⚡ High-Performance APIs
 
-- Improved API response time from approximately **33 ms to 11 ms**
-- Implemented a caching layer for frequently accessed data
+- Improved API response time from ~**33 ms to 11 ms** (~67% reduction) via **Redis caching**
 - Identified and resolved the **N+1 query problem**
-- Reduced unnecessary and redundant database calls
-- Optimized data-access patterns for better application performance
+- Reduced redundant database calls and optimized data-access patterns
 
 ### 📊 Database Optimization
 
-- Added appropriate database indexes to improve query performance
-- Implemented pagination for product and order listing APIs
-- Optimized data retrieval for large datasets
-- Reduced database load and unnecessary data transfer
+- Indexes added to frequently queried columns
+- Pagination implemented for product and order listing APIs
+- Reduced database load and network payload for large datasets
 
 ### 🐳 Containerized Deployment
 
-- Containerized application services using **Docker**
-- Prepared the application for deployment on **Microsoft Azure**
-- Provides consistent environments across development, testing, and production
-- Supports scalable and portable application deployment
+- Frontend, backend, Redis, and Kafka containerized together via `docker-compose.yml`
+- Prepared for deployment on **Microsoft Azure**
 
-Understood — you want the Markdown rendered normally in the response, not one giant code block. Here is the fixed version:
+## 🏗️ Architecture
 
-🏗️ Architecture
+```
+                     ┌─────────────────────┐
+                     │      Frontend       │
+                     └──────────┬──────────┘
+                                │
+                                ▼
+                     ┌─────────────────────┐
+                     │     API Gateway     │
+                     └──────────┬──────────┘
+                                │
+             ┌──────────────────┼──────────────────┐
+             │                  │                  │
+             ▼                  ▼                  ▼
+    ┌────────────────┐ ┌────────────────┐ ┌────────────────┐
+    │  User/Auth     │ │ Product        │ │ Order          │
+    │  Service       │ │ Service        │ │ Service        │
+    └───────┬────────┘ └───────┬────────┘ └───────┬────────┘
+            │                  │                  │
+            └──────────────────┼──────────────────┘
+                               │
+                               ▼
+                     ┌─────────────────────┐
+                     │   Kafka Event Bus   │
+                     └─────────────────────┘
 
-The application follows an event-driven microservices architecture, where individual services are responsible for specific business capabilities.
+                     ┌─────────────────────┐
+                     │  AI Agent (Spring   │
+                     │  AI + Tool Calling  │
+                     │      + RAG)         │
+                     └──────────┬──────────┘
+                                │
+                     ┌──────────┴──────────┐
+                     ▼                     ▼
+             Product RAG Store      Razorpay Tools
+           (vector embeddings)   (createOrder/verify/refund)
+```
 
-                         ┌─────────────────────┐
-                         │      Frontend       │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │     API Gateway     │
-                         └──────────┬──────────┘
-                                    │
-                 ┌──────────────────┼──────────────────┐
-                 │                  │                  │
-                 ▼                  ▼                  ▼
-        ┌────────────────┐ ┌────────────────┐ ┌────────────────┐
-        │  User/Auth     │ │ Product        │ │ Order          │
-        │  Service       │ │ Service        │ │ Service        │
-        └───────┬────────┘ └───────┬────────┘ └───────┬────────┘
-                │                  │                  │
-                └──────────────────┼──────────────────┘
-                                   │
-                                   ▼
-                         ┌─────────────────────┐
-                         │   Event / Message   │
-                         │       Broker        │
-                         └─────────────────────┘
+## 🤖 AI Agent — Example Interactions
 
-                         ┌─────────────────────┐
-                         │      Spring AI      │
-                         │  Conversational AI  │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                              AI Assistant
+**Customer:**
+> What laptops do you have under 60,000 with good battery life?
 
-## ⚡ Performance Improvements
+**Agent:**
+> Retrieves matching products via RAG and responds with relevant options and specs.
 
-Performance optimization was a major focus of this project.
+**Customer:**
+> Add the Dell Inspiron to my cart and checkout.
 
-### Before Optimization
+**Agent:**
+> Adds the item to the cart, creates a Razorpay order, and redirects the user to the payment page.
 
-**API Response Time:** `33 ms`
+**Customer:**
+> Can you break down the EMI cost for this order?
 
-### After Optimization
+**Agent:**
+> Explains the EMI tenure options, interest charges, processing fees, and total payable amount in plain language.
 
-**API Response Time:** `11 ms`
+## 🧩 Build Challenges & Technical Obstacles
 
-This resulted in approximately **67% reduction in measured API response time**, achieved through:
+**1. RAG Vector Database Management**
+Managing embeddings and vector storage for product data and tool metadata was an early challenge. Resolved by studying the Spring AI documentation in depth and configuring a vector database suited to the retrieval performance needs of the application.
 
-- ⚡ Caching frequently requested data
-- 🔄 Resolving N+1 database queries
-- 📉 Reducing redundant database calls
-- 🔎 Adding database indexes
-- 📄 Introducing pagination
-- 🚀 Optimizing data-access patterns
+**2. High Token Consumption from Tool Calling**
+Tool parsing and usage consumed significantly more tokens than expected as the toolset grew. Solved by implementing Spring AI's **Tool Search Tool**, which indexes available tools using similarity-distance search and retrieves only the tools relevant to a given request, cutting unnecessary token overhead.
 
-These optimizations help the application remain responsive as the amount of product and order data increases.
+**3. Gemini API Tool-Calling "Thought Signature" Issue**
+Configuring tool calling with the Gemini LLM surfaced a persistent thought-signature issue. Resolved after extensive research (Spring AI docs, community blogs, forums) by enabling internal tool execution, turning on the model's thinking capability, and writing clearer, more explicit tool descriptions.
 
 ## 🔐 Security
 
-The application uses **Spring Security** to provide a secure authentication and authorization layer.
-
-### Security Features
-
-- 🔐 Authentication and authorization
-- 🛡️ Protected REST APIs
-- 👥 Role-based access control
-- 🔒 Secure handling of user resources
-- 🚫 Restricted access to protected application functionality
-
-## 🤖 AI Integration
-
-The application integrates **Spring AI** to introduce conversational capabilities into the e-commerce platform.
-
-The AI assistant provides a natural-language interface for customer interactions, making it easier for users to ask questions and receive relevant responses without navigating through multiple application screens.
-
-### Example Interactions
-
-**Customer:**
-
-> What products are available in the electronics category?
-
-**Assistant:**
-
-> Here are the available electronics products...
-
-**Customer:**
-
-> Show me my recent orders.
-
-**Assistant:**
-
-> Here are your recent orders...
+- Authentication and authorization via Spring Security
+- Role-based access control on protected endpoints
+- Secure handling of user resources and restricted access to protected functionality
 
 ## 📊 Database Optimization
 
-The application uses several techniques to improve database performance and scalability.
-
 ### 🔎 Database Indexing
-
-Indexes were added to frequently queried columns to reduce query execution time and improve lookup performance.
+Indexes added to frequently queried columns to reduce query execution time.
 
 ### 📄 Pagination
-
-Product and order listing APIs use pagination instead of retrieving the complete dataset in a single request.
-
-**Example:**
-
-http
+```
 GET /api/products?page=0&size=20
-
-
-
-### Pagination Helps Reduce
-
-- 💾 Memory consumption
-- 🗄️ Database load
-- 🌐 Network payload size
-- ⚡ API response time
+```
+Reduces memory consumption, database load, network payload, and API response time.
 
 ### 🔄 N+1 Query Optimization
+Identified and resolved N+1 query issues in data-access operations, cutting redundant database calls.
 
-The N+1 query problem was identified in data-access operations and optimized to prevent unnecessary repeated database queries.
-
-This significantly reduced redundant database calls and contributed to the overall API performance improvement.
-
-### 🐳 Docker
-
-Application components can be packaged as Docker containers, providing a consistent runtime environment across different systems.
-
-**Build the Application**
-\`\`\`bash
-./mvnw clean package
-\`\`\`
-
-**Build Docker Image**
-\`\`\`bash
-docker build -t ecommerce-app .
-\`\`\`
-
-**Run Docker Container**
-\`\`\`bash
-docker run -p 8080:8080 ecommerce-app
-\`\`\`
-
-**Run with Docker Compose**
-\`\`\`bash
-docker compose up --build
-\`\`\`
-
-### ☁️ Deployment
-
-The application is containerized and prepared for deployment on Microsoft Azure.
-
-**The deployment approach provides:**
-
-- 📦 Containerized services
-- 🔄 Consistent application environments
-- 🚀 Independent service deployment
-- ☁️ Cloud scalability
-- 🛠️ Easier application management
-
-### 🛠️ Tech Stack
+## 🛠️ Tech Stack
 
 | Technology | Purpose |
 |---|---|
 | Java | Application development |
 | Spring Boot | Backend framework |
 | Spring Security | Authentication & authorization |
-| Spring AI | Conversational AI |
-| Spring Data JPA | Database access |
-| REST APIs | Service communication |
-| Event-Driven Architecture | Asynchronous service communication |
+| Spring AI | Agentic AI — tool calling, RAG, generative AI |
+| Razorpay | Payment gateway (create/verify/refund) |
+| Redis | Caching |
+| Kafka | Event-driven service communication |
+| Azure SQL Database | Persistent data storage |
 | Docker | Containerization |
 | Microsoft Azure | Cloud deployment |
-| SQL Database | Persistent data storage |
-| Caching | Performance optimization |
 
-### ⚙️ Getting Started
+## ⚙️ Getting Started
 
 **Prerequisites**
-
-Make sure the following are installed:
-
 - Java 17+
 - Maven
 - Docker
 - Git
-- A supported SQL database
-- Required AI provider/API credentials
+- Azure SQL Database (or compatible SQL DB)
+- Razorpay API credentials
+- AI provider API credentials
 
 **1. Clone the Repository**
-\`\`\`bash
-git clone https://github.com/<your-username>/<your-repository>.git
-cd <your-repository>
-\`\`\`
+```bash
+git clone https://github.com/Navaneethveer3/spring-practice.git
+cd spring-practice
+```
 
 **2. Configure Environment Variables**
-
-Create the required environment variables for database, security, and AI configuration.
-
-Example:
-\`\`\`bash
+```bash
 DB_URL=your_database_url
 DB_USERNAME=your_database_username
 DB_PASSWORD=your_database_password
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 AI_API_KEY=your_ai_api_key
-\`\`\`
-
+```
 > **Important:** Never commit API keys, passwords, JWT secrets, or other credentials to the repository.
 
 **3. Build the Application**
-\`\`\`bash
+```bash
 ./mvnw clean install
-\`\`\`
+```
 
 **4. Run with Docker Compose**
-\`\`\`bash
+```bash
 docker compose up --build
-\`\`\`
+```
 
-The individual services can then be accessed through the configured API Gateway.
-
-### 📈 Performance Highlights
+## 📈 Performance Highlights
 
 | Optimization | Result |
 |---|---|
@@ -287,46 +205,39 @@ The individual services can then be accessed through the configured API Gateway.
 | Pagination | Efficient handling of large datasets |
 | Containerization | Consistent deployment environment |
 
-### 🔮 Future Improvements
+## 🔮 Future Improvements
 
-- 🔍 Distributed tracing and centralized observability
-- 📊 Advanced monitoring and alerting
-- 🔄 Automated CI/CD pipelines
-- 🛡️ Rate limiting and API throttling
-- 🤖 More advanced AI-powered product recommendations
-- 🧪 Automated unit and integration testing
-- ☸️ Kubernetes-based orchestration
-- 🛡️ Improved fault tolerance and resilience patterns
-- 📝 Centralized logging across microservices
-- ⚡ Advanced caching and distributed cache management
+- Distributed tracing and centralized observability
+- Advanced monitoring and alerting
+- Automated CI/CD pipelines
+- Rate limiting and API throttling
+- More advanced AI-powered product recommendations
+- Automated unit and integration testing
+- Kubernetes-based orchestration
+- Improved fault tolerance and resilience patterns
+- Centralized logging across microservices
+- Advanced caching and distributed cache management
 
-### 👨‍💻 What I Learned
+## 👨‍💻 What I Learned
 
-Through this project, I gained practical experience in:
+- Designing and integrating an agentic AI layer (tool calling + RAG) into a production system
+- Managing vector databases and embeddings for RAG
+- Optimizing LLM token usage via tool search/indexing
+- Debugging provider-specific LLM tool-calling issues (Gemini thought signatures)
+- Automating payment workflows (Razorpay) through AI tool calling
+- Designing event-driven microservices with Kafka
+- Implementing secure, role-based APIs with Spring Security
+- Improving backend performance using caching, indexing, and pagination
+- Containerizing and preparing microservices for Azure deployment
 
-- Designing event-driven microservices
-- Implementing secure APIs with Spring Security
-- Integrating AI capabilities using Spring AI
-- Diagnosing and resolving N+1 query problems
-- Improving backend performance using caching and indexing
-- Designing APIs for large datasets using pagination
-- Containerizing applications using Docker
-- Preparing microservices for Azure cloud deployment
-- Building scalable and maintainable backend systems
-- Designing services with performance and scalability in mind
+## 📌 Project Highlights
 
-### 📌 Project Highlights
-
-This project demonstrates a production-oriented approach to building an e-commerce backend focused on scalability, security, performance, and intelligent customer interaction.
-
-**Key Achievements**
-
-- 🚀 **Improved API response time from 33 ms to 11 ms**
-- ⚡ Reduced redundant database operations by resolving N+1 queries
-- 💾 Implemented caching for frequently accessed data
-- 📊 Added database indexing and pagination for large datasets
-- 🔐 Secured APIs using Spring Security
-- 🤖 Integrated Spring AI for a conversational customer assistant
-- 🔄 Implemented an event-driven microservices architecture
-- 🐳 Containerized services using Docker
-- ☁️ Prepared the application for Azure deployment
+- 🤖 Agentic AI that places orders, manages the cart, and redirects to payment autonomously
+- 💳 Full Razorpay lifecycle automation (create/verify/refund) via tool calling
+- 📚 RAG-powered product search and Q&A
+- 🧮 Plain-language EMI, offer, and cost breakdowns for users
+- 🚀 API response time improved from 33 ms to 11 ms
+- 🔐 Role-based access control with Spring Security
+- 🔄 Event-driven microservices architecture with Kafka
+- 🐳 Fully containerized with Docker
+- ☁️ Production-ready, Azure-deployable design
