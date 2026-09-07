@@ -24,14 +24,13 @@ public class AiService {
 	@Autowired
 	private ProductService productService;
 
-	
 	public String chat(String prompt) {
 		return chatClient
 				.prompt(prompt)
 				.call()
 				.content();
 	}
-	
+
 	public String getResponse(UserPrincipal principal, String userPrompt, Integer productId) {
 
 		String systemContext;
@@ -49,52 +48,57 @@ public class AiService {
 					List<String> emiList = new ArrayList<>();
 
 					for (PaymentOptions opt : product.getPayments()) {
-						if (opt.getCredit() != null && !opt.getCredit().isBlank()) creditList.add(opt.getCredit());
-						if (opt.getDebit() != null && !opt.getDebit().isBlank()) debitList.add(opt.getDebit());
-						if (opt.getEMI() != null && !opt.getEMI().isBlank()) emiList.add(opt.getEMI());
+						if (opt.getCredit() != null && !opt.getCredit().isBlank())
+							creditList.add(opt.getCredit());
+						if (opt.getDebit() != null && !opt.getDebit().isBlank())
+							debitList.add(opt.getDebit());
+						if (opt.getEMI() != null && !opt.getEMI().isBlank())
+							emiList.add(opt.getEMI());
 					}
 
-					if (!creditList.isEmpty()) creditOffers = String.join("; ", creditList);
-					if (!debitList.isEmpty()) debitOffers = String.join("; ", debitList);
-					if (!emiList.isEmpty()) emiOffers = String.join("; ", emiList);
+					if (!creditList.isEmpty())
+						creditOffers = String.join("; ", creditList);
+					if (!debitList.isEmpty())
+						debitOffers = String.join("; ", debitList);
+					if (!emiList.isEmpty())
+						emiOffers = String.join("; ", emiList);
 				}
 
 				systemContext = String.format(
-					"You are a helpful shopping assistant. " +
-					"The user is currently viewing the following product:\n" +
-					"  - ID: %d\n" +
-					"  - Name: %s\n" +
-					"  - Brand: %s\n" +
-					"  - Price: %s .rs\n" +
-					"  - Description: %s\n" +
-					"  - Stock: %s units available\n"
-					+ "- offers :\n"
-					+ "credit card : %s\n"
-					+ "debit card : %s\n"
-					+ "emi : %s\n"
-					+ "\n" +
-					"Use these details to answer the user's question accurately. " +
-					"Also leverage the knowledge base for any additional context.",
-					product.getId(),
-					product.getName(),
-					product.getBrand() != null ? product.getBrand() : "N/A",
-					product.getPrice(),
-					product.getDescription() != null ? product.getDescription() : "No description available",
-					product.getQuantity() != null ? product.getQuantity() : 0,
-					creditOffers,
-					debitOffers,
-					emiOffers
-				);
+						"You are a helpful shopping assistant. " +
+								"The user is currently viewing the following product:\n" +
+								"  - ID: %d\n" +
+								"  - Name: %s\n" +
+								"  - Brand: %s\n" +
+								"  - Price: %s .rs\n" +
+								"  - Description: %s\n" +
+								"  - Stock: %s units available\n"
+								+ "- offers :\n"
+								+ "credit card : %s\n"
+								+ "debit card : %s\n"
+								+ "emi : %s\n"
+								+ "\n" +
+								"Use these details to answer the user's question accurately. " +
+								"Also leverage the knowledge base for any additional context.",
+						product.getId(),
+						product.getName(),
+						product.getBrand() != null ? product.getBrand() : "N/A",
+						product.getPrice(),
+						product.getDescription() != null ? product.getDescription() : "No description available",
+						product.getQuantity() != null ? product.getQuantity() : 0,
+						creditOffers,
+						debitOffers,
+						emiOffers);
 			} else {
 				systemContext = "You are a helpful shopping assistant. " +
-					"The user referenced product ID " + productId + " but it could not be found. " +
-					"Let the user know and offer to help with other products.";
+						"The user referenced product ID " + productId + " but it could not be found. " +
+						"Let the user know and offer to help with other products.";
 			}
 		} else {
 			systemContext = "You are a helpful shopping assistant for an online store. " +
-				"Use tools to answer questions about products, prices, availability, recommendations, orders, payments, cancellation and refunds for an order accurately.\n";
+					"Use tools to answer questions about products, prices, availability, recommendations, orders, payments, cancellation and refunds for an order accurately.\n";
 		}
-		
+
 		systemContext += """
 
 				You are a helpful shopping assistant for an online store.
@@ -143,20 +147,22 @@ public class AiService {
 				  backend implementation, or tool execution details.
 				- Respond only with customer-facing information.
 				- Keep responses concise, helpful, and clear.
-				
+
 				RULES:
 				- Never reveal internal reasoning, chain-of-thought, planning, tool selection,
 				  backend implementation, or tool execution details.
 				- Even if you want confirmation to proceed with an action, just ask like "can I proceed?" but never show the backend tools, logic, reasoning to the user.
 				- Execute tools silently in the background. Never mention tool names, parameters, or internal execution details to the user.
 				- Never generate own responses.
+				- If you want confirmation of using tools, just ask "can I proceed?" but don't say one single word more than that.
 				""";
 
 		String content = this.chatClient
 				.prompt()
-//				.options(GoogleGenAiChatOptions.builder()
-//						.thinkingBudget(0) // MUST disable thinking — prevents thought leaks and thought_signature errors
-//						.build())
+				// .options(GoogleGenAiChatOptions.builder()
+				// .thinkingBudget(0) // MUST disable thinking — prevents thought leaks and
+				// thought_signature errors
+				// .build())
 				.advisors(a -> a.param(ChatMemory.CONVERSATION_ID, principal.getUsername()))
 				.system(systemContext)
 				.user(userPrompt)
@@ -167,11 +173,14 @@ public class AiService {
 	}
 
 	private String sanitizeResponse(String content) {
-		if (content == null) return "";
+		if (content == null)
+			return "";
 		// Strip any <thought> tags
 		String sanitized = content.replaceAll("(?s)<thought>.*?</thought>", "").trim();
 		// Strip any internal reasoning or order placement process monologue if leaked
-		sanitized = sanitized.replaceAll("(?s)^Order Placement Process\\s*.*?(?=Your payment|Order #|Here are|Successfully|Payment|I've|I have|Please|$)", "").trim();
+		sanitized = sanitized.replaceAll(
+				"(?s)^Order Placement Process\\s*.*?(?=Your payment|Order #|Here are|Successfully|Payment|I've|I have|Please|$)",
+				"").trim();
 		return sanitized.isEmpty() ? content : sanitized;
 	}
 }
