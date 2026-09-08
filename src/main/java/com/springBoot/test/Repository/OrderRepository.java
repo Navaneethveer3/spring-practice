@@ -24,4 +24,5 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 	Optional<List<Order>> findByStatusAndDeliveryAndUser(Status status, DeliveryStatus deliveryStatus, Users user);
 	
 	Optional<List<Order>> findTop10ByDeliveryAndUser(DeliveryStatus deliveryStatus, Users user);
+	
 }

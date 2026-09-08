@@ -46,6 +46,7 @@ public class SecurityConfig {
 					.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 					.requestMatchers("/login", "/register", "/refresh", "/products", "/products/**", "/error").permitAll()
 					.requestMatchers("/cart/**", "/orders/**", "/ai/**", "/profile/**", "/logout", "/reset-password", "/payments/**").hasAnyRole("ADMIN", "USER")
+					.requestMatchers("/successful-orders/**").hasRole("ADMIN")
 					.anyRequest().authenticated())
 			.httpBasic(Customizer.withDefaults())
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

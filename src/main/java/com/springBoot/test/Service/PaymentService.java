@@ -62,6 +62,9 @@ public class PaymentService {
 	
 	@Autowired
 	private KafkaTemplate<String, List<InventoryDTO>> refundKafka;
+	
+	@Autowired
+	private KafkaTemplate<String, Order> placedOrderKafka;
 
 	public String getApiKey() {
 		return apiKey;
@@ -143,6 +146,7 @@ public class PaymentService {
 			}
 			cartRepo.deleteAllByUser(user);
 			cartService.clearCart(user);
+			placedOrderKafka.send("placed-order", pendingOrder);
 			return orderRepo.save(pendingOrder);
 		} else {
 			pendingOrder.setStatus(Status.FAILED);
