@@ -7,9 +7,12 @@ import lombok.Data;
 @Data
 public class SuccessfulOrders {
 
+	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
 	
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "order_id")
 	private Order order;
 
 	public Integer getId() {

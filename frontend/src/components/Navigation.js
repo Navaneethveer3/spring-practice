@@ -59,7 +59,10 @@ const Navigation = () => {
             <Link to="/" className="navbar-link">Home</Link>
 
             {role === 'ADMIN' && (
-              <Link to="/add-product" className="navbar-link">➕ Add Product</Link>
+              <>
+                <Link to="/admin/orders" className="navbar-link">📋 Customer Orders</Link>
+                <Link to="/add-product" className="navbar-link">➕ Add Product</Link>
+              </>
             )}
 
             {role === 'USER' && (

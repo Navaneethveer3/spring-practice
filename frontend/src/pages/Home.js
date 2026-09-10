@@ -93,7 +93,10 @@ const Home = () => {
             </>
           )}
           {role === 'ADMIN' && (
-            <Link to="/add-product" className="btn btn-primary">➕ Add New Product</Link>
+            <>
+              <Link to="/admin/orders" className="btn btn-accent">📋 Customer Orders</Link>
+              <Link to="/add-product" className="btn btn-primary">➕ Add New Product</Link>
+            </>
           )}
         </div>
       </div>

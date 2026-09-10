@@ -71,6 +71,7 @@ export const placeOrder = () => api.post('/cart/place-order');
 export const getOrders = () => api.get('/orders');
 export const getOrderById = (orderId) => api.get(`/orders/${orderId}`);
 export const cancelOrder = (orderId) => api.post(`/orders/${orderId}/cancel`);
+export const getSuccessfulOrders = () => api.get('/successful-orders');
 
 // ===== Payments API =====
 export const createPaymentOrder = () => api.post('/payments/create-order');
