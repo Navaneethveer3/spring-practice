@@ -233,7 +233,7 @@ docker compose up --build
 ## 📌 Project Highlights
 
 - 🤖 Agentic AI that places orders, manages the cart, and redirects to payment autonomously
-- 💳 Full Razorpay lifecycle automation (create/verify/refund) via tool calling
+- 💳 Full Razorpay lifecycle automation (create/verify/refund) via tool calling mechanism
 - 📚 RAG-powered product search and Q&A
 - 🧮 Plain-language EMI, offer, and cost breakdowns for users
 - 🚀 API response time improved from 33 ms to 11 ms
