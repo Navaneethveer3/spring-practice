@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.springBoot.test.Exceptions.ProductNotFoundException;
 import com.springBoot.test.Model.*;
 import com.springBoot.test.Repository.*;
 
@@ -94,7 +95,7 @@ public class ProductService {
 		try {
 			Product curProd = repo.findById(prod.getId()).orElse(null);
 			if(curProd==null) {
-				throw new Exception("Product doesn't exist");
+				throw new ProductNotFoundException();
 			}
 			if (image != null && !image.isEmpty()) {
 				if(image.getSize()>MAX_FILE_SIZE) {

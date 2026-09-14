@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.springBoot.test.Exceptions.ProductNotFoundException;
 import com.springBoot.test.Model.Product;
 import com.springBoot.test.Model.Profile;
 import com.springBoot.test.Model.Review;
@@ -29,7 +30,7 @@ public class ReviewService {
 	public Review createReview(int prodId, Review review, String username) throws Exception {
 		Product prod = prodRepo.findById(prodId).orElse(null);
 		if(prod==null) {
-			throw new Exception("Product not found");
+			throw new ProductNotFoundException();
 		}
 		Profile profile = profileRepo.findByUsername(username);
 		if(profile==null) {
@@ -56,7 +57,7 @@ public class ReviewService {
 	public List<Review> getAllReviews(int prodId) throws Exception{
 		Product prod = prodRepo.findById(prodId).orElse(null);
 		if(prod==null) {
-			throw new Exception("Product doesn't exist");
+			throw new ProductNotFoundException();
 		}
 		return reviewRepo.findAllByProduct(prod);
 	}

@@ -16,6 +16,7 @@ import com.razorpay.RazorpayClient;
 import com.razorpay.Refund;
 import com.razorpay.Utils;
 import com.springBoot.test.DTO.InventoryDTO;
+import com.springBoot.test.Exceptions.ProductNotFoundException;
 import com.springBoot.test.Exceptions.UserNotAuthenticatedException;
 import com.springBoot.test.Model.CartItem;
 import com.springBoot.test.Model.DeliveryStatus;
@@ -165,7 +166,7 @@ public class PaymentService {
 		}
 		Product product = prodRepo.findById(prodId).orElse(null);
 		if (product == null) {
-			throw new Exception("Product not found");
+			throw new ProductNotFoundException();
 		}
 		double orderValue = product.getPrice() * quantity;
 		long convertedAmount = (long) Math.round(orderValue * 100);

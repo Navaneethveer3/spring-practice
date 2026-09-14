@@ -10,6 +10,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
+import com.springBoot.test.Exceptions.ProductNotFoundException;
 import com.springBoot.test.Model.CartItem;
 import com.springBoot.test.Model.Order;
 import com.springBoot.test.Model.OrderItem;
@@ -41,7 +42,7 @@ public class CartService {
 		}
 	)
 	public CartItem add(Users user, int prodId) throws Exception {
-		Product product = prodRepo.findById(prodId).orElseThrow(()->new Exception("Product not found"));
+		Product product = prodRepo.findById(prodId).orElseThrow(()->new ProductNotFoundException());
 		CartItem existingCart = cartRepo.findByUserAndProduct(user, product);
 		if(existingCart!=null) {
 			existingCart.setQuantity(existingCart.getQuantity()+1);
@@ -63,7 +64,7 @@ public class CartService {
 			}
 		)
 	public void remove(Users user, int prodId) throws Exception {
-		Product prod = prodRepo.findById(prodId).orElseThrow(()->new Exception("Product not found"));
+		Product prod = prodRepo.findById(prodId).orElseThrow(()->new ProductNotFoundException());
 		CartItem existingCart = cartRepo.findByUserAndProduct(user, prod);
 		if(existingCart!=null) {
 			if(existingCart.getQuantity()>1) {

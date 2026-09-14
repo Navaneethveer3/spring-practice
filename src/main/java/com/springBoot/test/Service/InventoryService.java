@@ -7,6 +7,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import com.springBoot.test.DTO.InventoryDTO;
+import com.springBoot.test.Exceptions.ProductNotFoundException;
 import com.springBoot.test.Model.OrderItem;
 import com.springBoot.test.Model.Product;
 import com.springBoot.test.Repository.ProductRepository;
@@ -23,7 +24,7 @@ public class InventoryService {
 		int quantity = dto.getQuantity();
 		Product prod = prodRepo.findById(id).orElse(null);
 		if(prod==null) {
-			throw new Exception("Product not found");
+			throw new ProductNotFoundException();
 		}
 		if(prod.getQuantity()<quantity) {
 			throw new Exception("Product doesn't has enough stock");
@@ -38,7 +39,7 @@ public class InventoryService {
 		int quantity = dto.getQuantity();
 		Product prod = prodRepo.findById(id).orElse(null);
 		if(prod==null) {
-			throw new Exception("Product not found");
+			throw new ProductNotFoundException();
 		}
 		prod.setQuantity(prod.getQuantity()+quantity);
 		prodRepo.save(prod);
@@ -74,7 +75,7 @@ public class InventoryService {
 			int quantity = dto.getQuantity();
 			Product product = prodRepo.findById(id).orElse(null);
 			if (product == null) {					
-				throw new Exception("Product not found with id: " + id);
+				throw new ProductNotFoundException();
 			}
 			product.setQuantity(product.getQuantity() + quantity);
 			prodRepo.save(product);
