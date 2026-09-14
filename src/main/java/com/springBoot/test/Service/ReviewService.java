@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.springBoot.test.Exceptions.ProductNotFoundException;
+import com.springBoot.test.Exceptions.ProfileNotFoundException;
 import com.springBoot.test.Model.Product;
 import com.springBoot.test.Model.Profile;
 import com.springBoot.test.Model.Review;
@@ -34,7 +35,7 @@ public class ReviewService {
 		}
 		Profile profile = profileRepo.findByUsername(username);
 		if(profile==null) {
-			throw new Exception("Profile doesn't exist");
+			throw new ProfileNotFoundException();
 		}
 		review.setProduct(prod);
 		review.setProfile(profile);

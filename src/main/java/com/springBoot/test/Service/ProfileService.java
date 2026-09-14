@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.springBoot.test.Exceptions.ProfileNotFoundException;
 import com.springBoot.test.Model.Profile;
 import com.springBoot.test.Model.Users;
 import com.springBoot.test.Repository.ProfileRepository;
@@ -27,7 +28,7 @@ public class ProfileService {
 	public Profile getProfile(String username) throws Exception{
 		Profile profile = profileRepo.findByUsername(username);
 		if(profile==null) {
-			throw new Exception("No user exists with the {username}");
+			throw new ProfileNotFoundException();
 		}
 		return profile;
 	}
