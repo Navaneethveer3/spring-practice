@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.springBoot.test.Exceptions.UserNotAuthenticatedException;
 import com.springBoot.test.Model.Profile;
 import com.springBoot.test.Model.Users;
 import com.springBoot.test.Repository.ProfileRepository;
@@ -62,10 +63,10 @@ public class UserService {
 	}
 	
 	@CacheEvict(key = "#username", value = "users")
-	public Users resetPassword(String username, String str) {
+	public Users resetPassword(String username, String str) throws Exception{
 		Users curUser = repo.findByUsername(username);
 		if(curUser==null) {
-			throw new UsernameNotFoundException("User doesn't exist");
+			throw new UserNotAuthenticatedException();
 		}
 		curUser.setPassword(passwordEncoder.encode(str));
 		return repo.save(curUser);

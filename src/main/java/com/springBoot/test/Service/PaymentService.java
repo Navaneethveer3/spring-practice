@@ -16,6 +16,7 @@ import com.razorpay.RazorpayClient;
 import com.razorpay.Refund;
 import com.razorpay.Utils;
 import com.springBoot.test.DTO.InventoryDTO;
+import com.springBoot.test.Exceptions.UserNotAuthenticatedException;
 import com.springBoot.test.Model.CartItem;
 import com.springBoot.test.Model.DeliveryStatus;
 import com.springBoot.test.Model.Order;
@@ -74,7 +75,7 @@ public class PaymentService {
 	public Map<String, String> createPayment(String username) throws Exception {
 		Users user = userRepo.findByUsername(username);
 		if (user == null) {
-			throw new Exception("User not authenticated");
+			throw new UserNotAuthenticatedException();
 		}
 		List<CartItem> cart = cartRepo.findByUser(user);
 		if (cart == null || cart.isEmpty()) {
@@ -116,7 +117,7 @@ public class PaymentService {
 	public Order verifyPayment(Map<String, String> payload, String username) throws Exception {
 		Users user = userRepo.findByUsername(username);
 		if (user == null) {
-			throw new Exception("User not authenticated");
+			throw new UserNotAuthenticatedException();
 		}
 		String razorpayOrderId = payload.get("razorpay_order_id");
 		String razorpayPaymentId = payload.get("razorpay_payment_id");
@@ -160,7 +161,7 @@ public class PaymentService {
 	public Map<String, String> placeOrder(String username, int prodId, int quantity) throws Exception {
 		Users user = userRepo.findByUsername(username);
 		if (user == null) {
-			throw new Exception("User not authenticated");
+			throw new UserNotAuthenticatedException();
 		}
 		Product product = prodRepo.findById(prodId).orElse(null);
 		if (product == null) {
@@ -208,7 +209,7 @@ public class PaymentService {
 		}
 		Users user = userRepo.findByUsername(username);
 		if(user==null) {
-			throw new Exception("User is not authenticated");
+			throw new UserNotAuthenticatedException();
 		}
 		if(!order.getUser().getId().equals(user.getId())) {
 			throw new Exception("Unauthorized to refund this order");

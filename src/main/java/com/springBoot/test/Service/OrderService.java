@@ -9,6 +9,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import com.springBoot.test.DTO.InventoryDTO;
+import com.springBoot.test.Exceptions.UserNotAuthenticatedException;
 import com.springBoot.test.Model.DeliveryStatus;
 import com.springBoot.test.Model.Order;
 import com.springBoot.test.Model.OrderItem;
@@ -77,7 +78,7 @@ public class OrderService {
 	public List<Order> getAllRefundableOrders(String username) throws Exception{
 		Users user = userRepo.findByUsername(username);
 		if(user==null) {
-			throw new Exception("User not authenticated");
+			throw new UserNotAuthenticatedException();
 		}
 		Optional<List<Order>> orders = orderRepo.findByStatusAndDeliveryAndUser(Status.PAID, DeliveryStatus.Created, user);
 		return orders.orElse(List.of());
@@ -86,7 +87,7 @@ public class OrderService {
 	public List<Order> getTop10DeliveredOrders(String username) throws Exception{
 		Users user = userRepo.findByUsername(username);
 		if(user==null) {
-			throw new Exception("User not authenticated");
+			throw new UserNotAuthenticatedException();
 		}
 		Optional<List<Order>> orders = orderRepo.findTop10ByDeliveryAndUser(DeliveryStatus.Delivered, user);
 		return orders.get();

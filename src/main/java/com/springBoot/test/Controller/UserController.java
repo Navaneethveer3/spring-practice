@@ -55,7 +55,7 @@ public class UserController {
 	}
 	
 	@PostMapping("reset-password")
-	public ResponseEntity<Users> resetPassword(Principal principal, @RequestBody Users user){
+	public ResponseEntity<Users> resetPassword(Principal principal, @RequestBody Users user) throws Exception{
 		String username = principal.getName();
 		return new ResponseEntity<>(service.resetPassword(username, user.getPassword()), HttpStatus.OK);
 	}
