@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.springBoot.test.Exceptions.CartEmptyException;
 import com.springBoot.test.Exceptions.ProductNotFoundException;
 import com.springBoot.test.Exceptions.ProfileNotFoundException;
 import com.springBoot.test.Exceptions.UserNotAuthenticatedException;
@@ -30,6 +31,13 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<?> handleProfile(ProfileNotFoundException ex){
 		return ResponseEntity
 				.status(HttpStatus.NOT_FOUND)
+				.body(ex.getMessage());
+	}
+	
+	@ExceptionHandler(CartEmptyException.class)
+	public ResponseEntity<?> handleCart(CartEmptyException ex){
+		return ResponseEntity
+				.status(HttpStatus.OK)
 				.body(ex.getMessage());
 	}
 	

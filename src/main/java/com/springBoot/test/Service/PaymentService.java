@@ -16,6 +16,7 @@ import com.razorpay.RazorpayClient;
 import com.razorpay.Refund;
 import com.razorpay.Utils;
 import com.springBoot.test.DTO.InventoryDTO;
+import com.springBoot.test.Exceptions.CartEmptyException;
 import com.springBoot.test.Exceptions.ProductNotFoundException;
 import com.springBoot.test.Exceptions.UserNotAuthenticatedException;
 import com.springBoot.test.Model.CartItem;
@@ -80,7 +81,7 @@ public class PaymentService {
 		}
 		List<CartItem> cart = cartRepo.findByUser(user);
 		if (cart == null || cart.isEmpty()) {
-			throw new Exception("Cart is empty");
+			throw new CartEmptyException();
 		}
 		double cartValue = cartService.getCartValue(user);
 		long convertedAmount = (long) Math.round(cartValue * 100);
