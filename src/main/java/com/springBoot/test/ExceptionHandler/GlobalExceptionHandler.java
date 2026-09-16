@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.springBoot.test.Exceptions.CartEmptyException;
+import com.springBoot.test.Exceptions.GuardrailException;
 import com.springBoot.test.Exceptions.ProductNotFoundException;
 import com.springBoot.test.Exceptions.ProfileNotFoundException;
 import com.springBoot.test.Exceptions.UserNotAuthenticatedException;
@@ -38,6 +39,13 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<?> handleCart(CartEmptyException ex){
 		return ResponseEntity
 				.status(HttpStatus.OK)
+				.body(ex.getMessage());
+	}
+	
+	@ExceptionHandler(GuardrailException.class)
+	public ResponseEntity<?> handleGuardrails(GuardrailException ex){
+		return ResponseEntity
+				.status(HttpStatus.NON_AUTHORITATIVE_INFORMATION)
 				.body(ex.getMessage());
 	}
 	

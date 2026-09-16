@@ -36,7 +36,7 @@ public class AiController {
 	public String chat(
 			@AuthenticationPrincipal UserPrincipal principal,
 			@RequestParam String prompt,
-			@RequestParam(required = false) Integer productId) {
+			@RequestParam(required = false) Integer productId) throws Exception {
 
 		return aiService.getResponse(principal, prompt, productId);
 	}

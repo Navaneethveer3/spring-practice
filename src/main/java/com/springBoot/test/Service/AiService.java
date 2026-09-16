@@ -1,7 +1,6 @@
 package com.springBoot.test.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -9,6 +8,7 @@ import org.springframework.ai.google.genai.GoogleGenAiChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.springBoot.test.Exceptions.GuardrailException;
 import com.springBoot.test.Model.PaymentOptions;
 import com.springBoot.test.Model.Product;
 import com.springBoot.test.Model.UserPrincipal;
@@ -31,8 +31,12 @@ public class AiService {
 				.content();
 	}
 
-	public String getResponse(UserPrincipal principal, String userPrompt, Integer productId) {
+	public String getResponse(UserPrincipal principal, String userPrompt, Integer productId) throws Exception {
 
+		if(!isSafe(userPrompt)) {
+			throw new GuardrailException();
+		}
+		
 		String systemContext;
 
 		if (productId != null) {
@@ -182,5 +186,16 @@ public class AiService {
 				"(?s)^Order Placement Process\\s*.*?(?=Your payment|Order #|Here are|Successfully|Payment|I've|I have|Please|$)",
 				"").trim();
 		return sanitized.isEmpty() ? content : sanitized;
+	}
+	
+	private boolean isSafe(String prompt) {
+		String[] strArr = prompt.trim().split("\s+");
+		Set<String> guardrails = new HashSet<>(Arrays.asList("password","passwords"));
+		for(String word : strArr) {
+			if(guardrails.contains(word)) {
+				return false;
+			}
+		}
+		return true;
 	}
 }
