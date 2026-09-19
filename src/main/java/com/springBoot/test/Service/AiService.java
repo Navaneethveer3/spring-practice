@@ -42,57 +42,16 @@ public class AiService {
 		if (productId != null) {
 			Product product = productService.getProductById(productId);
 			if (product != null) {
-				String creditOffers = "None";
-				String debitOffers = "None";
-				String emiOffers = "None";
-
-				if (product.getPayments() != null && !product.getPayments().isEmpty()) {
-					List<String> creditList = new ArrayList<>();
-					List<String> debitList = new ArrayList<>();
-					List<String> emiList = new ArrayList<>();
-
-					for (PaymentOptions opt : product.getPayments()) {
-						if (opt.getCredit() != null && !opt.getCredit().isBlank())
-							creditList.add(opt.getCredit());
-						if (opt.getDebit() != null && !opt.getDebit().isBlank())
-							debitList.add(opt.getDebit());
-						if (opt.getEMI() != null && !opt.getEMI().isBlank())
-							emiList.add(opt.getEMI());
-					}
-
-					if (!creditList.isEmpty())
-						creditOffers = String.join("; ", creditList);
-					if (!debitList.isEmpty())
-						debitOffers = String.join("; ", debitList);
-					if (!emiList.isEmpty())
-						emiOffers = String.join("; ", emiList);
-				}
+				
 
 				systemContext = String.format(
 						"You are a helpful shopping assistant. " +
 								"The user is currently viewing the following product:\n" +
-								"  - ID: %d\n" +
-								"  - Name: %s\n" +
-								"  - Brand: %s\n" +
-								"  - Price: %s .rs\n" +
-								"  - Description: %s\n" +
-								"  - Stock: %s units available\n"
-								+ "- offers :\n"
-								+ "credit card : %s\n"
-								+ "debit card : %s\n"
-								+ "emi : %s\n"
+								"  - ID: %d\n"
 								+ "\n" +
-								"Use these details to answer the user's question accurately. " +
-								"Also leverage the knowledge base for any additional context.",
-						product.getId(),
-						product.getName(),
-						product.getBrand() != null ? product.getBrand() : "N/A",
-						product.getPrice(),
-						product.getDescription() != null ? product.getDescription() : "No description available",
-						product.getQuantity() != null ? product.getQuantity() : 0,
-						creditOffers,
-						debitOffers,
-						emiOffers);
+								"Also leverage the knowledge base for any additional context."+
+								"Use the available tools to retrive the product details",
+						product.getId());
 			} else {
 				systemContext = "You are a helpful shopping assistant. " +
 						"The user referenced product ID " + productId + " but it could not be found. " +
