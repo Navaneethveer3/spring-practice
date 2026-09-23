@@ -242,4 +242,4 @@ docker compose up --build
 - 🔐 Role-based access control with Spring Security
 - 🔄 Event-driven microservices architecture with Kafka
 - 🐳 Fully containerized with Docker
-- ☁️ Production-ready, Azure-deployable design.
+- ☁️ Production-ready, Azure-deployable design
